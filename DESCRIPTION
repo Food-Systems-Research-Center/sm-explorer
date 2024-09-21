@@ -7,6 +7,7 @@ Description: DESCRIPTION
 License: GPL (>= 3)
 Imports: 
     config,
+    ggplot2,
     golem,
     shiny
 Suggests: 

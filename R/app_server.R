@@ -5,5 +5,5 @@
 #' @import shiny
 #' @noRd
 app_server <- function(input, output, session) {
-  # Your application server logic
+  mod_ipsum_graph_server("ipsum_graph_1", reactive(input$show_graph))
 }

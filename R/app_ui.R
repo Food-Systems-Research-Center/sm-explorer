@@ -6,11 +6,14 @@
 #' @noRd
 app_ui <- function(request) {
   tagList(
-    # Leave this function for adding external resources
     golem_add_external_resources(),
-    # Your application UI logic
     fluidPage(
-      golem::golem_welcome_page() # Remove this line to start building your UI
+      sidebarPanel(
+        actionButton('show_graph', 'Show Graph')
+      ),
+      mainPanel(
+        mod_ipsum_graph_ui("ipsum_graph_1")
+      )
     )
   )
 }
@@ -35,7 +38,5 @@ golem_add_external_resources <- function() {
       path = app_sys("app/www"),
       app_title = "SMexplorer"
     )
-    # Add here other external resources
-    # for example, you can add shinyalert::useShinyalert()
   )
 }
