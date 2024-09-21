@@ -7,3 +7,6 @@ $run_dev.*
 ^.here$
 ^LICENSE\.md$
 ^README\.Rmd$
+^app\.R$
+^rsconnect$
+^\.rscignore$

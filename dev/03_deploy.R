@@ -59,3 +59,8 @@ rsconnect::deployApp(
   lint = FALSE,
   forceUpdate = TRUE
 )
+
+# Fix for issue with renv
+# https://github.com/ThinkR-open/golem/issues/1098
+options(rsconnect.packrat = TRUE)
+rsconnect::deployApp("path/to/the/app")

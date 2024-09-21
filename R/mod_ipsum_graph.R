@@ -7,6 +7,8 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
+#' 
+#' @import shinipsum ggplot2
 mod_ipsum_graph_ui <- function(id) {
   ns <- NS(id)
   tagList(
