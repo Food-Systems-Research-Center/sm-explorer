@@ -2,6 +2,9 @@
 
 export(run_app)
 import(ggplot2)
+import(leaflet)
+import(mapview)
+import(sf)
 import(shinipsum)
 import(shiny)
 import(shinydashboard)

@@ -6,9 +6,12 @@ Authors@R:
 Description: This is the description.
 License: GPL (>= 3)
 Imports: 
+    bslib,
     config,
     ggplot2,
     golem,
+    leaflet,
+    mapview,
     pkgload,
     shinipsum,
     shiny,
@@ -21,3 +24,5 @@ Encoding: UTF-8
 Language: en-US
 LazyData: true
 RoxygenNote: 7.3.2
+Depends: 
+    R (>= 2.10)

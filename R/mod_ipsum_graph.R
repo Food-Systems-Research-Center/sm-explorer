@@ -16,7 +16,7 @@ mod_ipsum_graph_ui <- function(id) {
     plotOutput(ns('random_plot'))
   )
 }
-    
+ 
 #' ipsum_graph Server Functions
 #'
 #' @noRd 
