@@ -10,9 +10,13 @@ app_ui <- function(request) {
   tagList(
     dashboardPage(
       dashboardHeader(title = "SMExplorer"),
+      
+      # Sidebar -----------------------------------------------------------
       dashboardSidebar(
         sidebarMenu(
           id = 'tabs',
+          menuItem("Interactive Map", tabName = "map_tab", icon = icon("map")),
+          menuItem("Data Explorer", tabName = "table_tab", icon = icon("table")),
           menuItem("Random Graph 1", tabName = "random_tab_1", icon = icon("dashboard")),
           conditionalPanel(
             condition = "input.tabs == 'random_tab_1'",
@@ -32,15 +36,27 @@ app_ui <- function(request) {
           menuItem("Random Graph 2", tabName = "random_tab_2", icon = icon("dashboard")),
           conditionalPanel(
             condition = "input.tabs == 'random_tab_2'",
-            div(style = "margin: 10px;", 
-                actionButton("create_graph_2", "General Kenobi")
+            div(
+              style = "display: flex; justify-content: center; align-items: center; height: 50px;",
+              actionButton("create_graph_2", "General Kenobi")
             )
-          ),
-          menuItem("Map", tabName = "map_tab", icon = icon("dashboard"))
+          )
         )
       ),
+      
+      # Body ---------------------------------------------------------------
       dashboardBody(
         tabItems(
+          tabItem(
+            tabName = 'map_tab',
+            h2(strong('Food Hardship Index 2020')),
+            mod_map_ui('map_plot')
+          ),
+          tabItem(
+            tabName = 'table_tab',
+            h2(strong('Data Explorer')),
+            mod_table_ui('table')
+          ),
           tabItem(tabName = "random_tab_1",
                   h2('The First Random Graph'),
                   mod_ipsum_graph_ui("random_graph_1")
@@ -48,27 +64,12 @@ app_ui <- function(request) {
           tabItem(tabName = "random_tab_2",
                   h2('The Second Random Graph'),
                   mod_ipsum_graph_2_ui("random_graph_2")
-          ),
-          tabItem(tabName = 'map_tab',
-                  h2('NE Map'),
-                  mod_map_ui('map_plot')
           )
         )
       )
     )
   )
-  
-    # my_theme <- bs_theme(
-    #   bg = "#001f3f",    # Background color
-    #   fg = "#ffffff",    # Foreground (text) color
-    #   primary = "#17a2b8",# Primary color
-    #   secondary = "#6c757d",# Secondary color
-    #   base_font = font_google("Roboto") # Use Google font
-    # )
-    # theme = bslib::bs_theme(
-    #   preset = 'sandstone'
-    # )
-  }
+}
 
 #' Add external Resources to the Application
 #'

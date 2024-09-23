@@ -14,7 +14,7 @@
 mod_map_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    leafletOutput(ns('map_plot'))
+    leafletOutput(ns('map_plot'), width = '800px', height = '600px')
   )
 }
     
@@ -25,8 +25,20 @@ mod_map_server <- function(id){
   moduleServer(id, function(input, output, session){
     ns <- session$ns
     output$map_plot <- renderLeaflet({
+      
       data('map_dat')
-      mapview(map_dat, zcol = 'hardship')@map
+      custom_popup <- paste0(
+        "<b>County:</b> ", map_dat$county, 
+        "<br><b>Food Hardship:</b> ", round(map_dat$hardship, 3)
+      )
+      
+      mapview(
+        map_dat, 
+        zcol = 'hardship',
+        label = 'county',
+        layer.name = 'Food Hardship Index',
+        popup = custom_popup
+      )@map
     })
   })
 }
