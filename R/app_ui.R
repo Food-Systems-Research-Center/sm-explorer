@@ -49,6 +49,15 @@ app_ui <- function(request) {
         tabItems(
           tabItem(
             tabName = 'map_tab',
+          #   tags$head(tags$style(HTML("
+          #   .leaflet-container {
+          #     height: 100vh; /* Full height of the viewport */
+          #     width: 100%;   /* Full width */
+          #   }
+          #   .content-wrapper {
+          #     padding: 0;    /* Remove padding */
+          #   }
+          # "))),
             h2(strong('Food Hardship Index 2020')),
             mod_map_ui('map_plot')
           ),

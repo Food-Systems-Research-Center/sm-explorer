@@ -14,7 +14,7 @@
 mod_map_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    leafletOutput(ns('map_plot'), width = '800px', height = '600px')
+    leafletOutput(ns('map_plot'), height = '600px') # width = '800px', height = '600px')
   )
 }
     
