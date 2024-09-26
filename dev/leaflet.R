@@ -8,7 +8,8 @@ pacman::p_load(
   maps,
   dplyr,
   mapview,
-  tidyr
+  tidyr,
+  leaflet.extras
 )
 
 load('data/map_dat.rda')
@@ -122,7 +123,8 @@ leaflet(map_dat_proj) %>%
       'USGS.USImagery'
     ), 
     overlayGroups = c('Counties'),
-    options = layersControlOptions(collapsed = FALSE)
+    options = layersControlOptions(collapsed = FALSE),
+    drag
   ) %>% 
   # hideGroup('Counties') %>% 
   addLegend(
@@ -132,5 +134,6 @@ leaflet(map_dat_proj) %>%
     title = "Mean Income per Farm",
     labFormat = labelFormat(prefix = "$"),
     opacity = 1
-  )
+  ) %>% 
+  addFullscreenControl()
 
