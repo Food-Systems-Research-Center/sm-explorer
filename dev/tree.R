@@ -7,7 +7,8 @@
 pacman::p_load(
   dplyr,
   collapsibleTree,
-  shinipsum
+  shinipsum,
+  viridisLite
 )
 
 # Load

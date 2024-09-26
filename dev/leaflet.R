@@ -123,8 +123,7 @@ leaflet(map_dat_proj) %>%
       'USGS.USImagery'
     ), 
     overlayGroups = c('Counties'),
-    options = layersControlOptions(collapsed = FALSE),
-    drag
+    options = layersControlOptions(collapsed = FALSE)
   ) %>% 
   # hideGroup('Counties') %>% 
   addLegend(

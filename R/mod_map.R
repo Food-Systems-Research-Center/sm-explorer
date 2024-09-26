@@ -11,7 +11,7 @@
 #' @import leaflet
 #' @import mapview
 #' @import sf
-#' @import leaflet.extensions
+#' @import leaflet.extras
 mod_map_ui <- function(id) {
   ns <- NS(id)
   tagList(
@@ -81,6 +81,7 @@ mod_map_server <- function(id){
     ns <- session$ns
     output$map_plot <- renderLeaflet({
       
+      # Prep -----
       data('map_dat_proj')
       custom_popup <- ~paste0(
         "<div style='text-align: center;'>
@@ -89,6 +90,11 @@ mod_map_server <- function(id){
         "</a></b></div>",
         "<strong>Land Area:</strong>", aland, "<br>",
         "<strong>Water Area:</strong>", awater, "<br>"
+      )
+      pal <- colorNumeric(
+        palette = "YlGn",
+        domain = map_dat_proj$mean_farm_income_per_operation,
+        reverse = FALSE
       )
       
       # Leaflet -----
@@ -119,7 +125,7 @@ mod_map_server <- function(id){
           smoothFactor = 0.5,
           opacity = 1.0, 
           fillOpacity = 0.8,
-          fillColor = ~pal(map_dat$mean_farm_income_per_operation),
+          # fillColor = ~pal(map_dat_proj$mean_farm_income_per_operation),
           highlightOptions = highlightOptions(
             color = "white",
             weight = 2,
@@ -156,14 +162,21 @@ mod_map_server <- function(id){
     # Observe -----
     observe({
       selected_var <- input$var
-      custom_popup <- ~paste0(
-        "<div style='text-align: center;'>
-        <b><a href='https://www.samurainoodle.com/'>",
-        county_name,
-        "</a></b></div>",
-        "<strong>Land Area:</strong>", aland, "<br>",
-        "<strong>Water Area:</strong>", awater, "<br>"
+      custom_popup <- function(county_name, aland, awater) {
+        paste0(
+          "<div style='text-align: center;'>",
+          "<b><a href='https://www.samurainoodle.com/'>", county_name, "</a></b><br>",
+          "<strong>Land Area:</strong> ", aland, "<br>",
+          "<strong>Water Area:</strong> ", awater, "<br>",
+          "<strong>", selected_var, ":</strong> ", map_dat_proj[[selected_var]], "<br>"
+        )
+      }
+      pal <- colorNumeric(
+        palette = "YlGn",
+        domain = map_dat_proj[[selected_var]],
+        reverse = FALSE
       )
+      
       leafletProxy(
         ns("map_plot"), 
         data = map_dat_proj
@@ -175,17 +188,27 @@ mod_map_server <- function(id){
           smoothFactor = 0.5,
           opacity = 1.0, 
           fillOpacity = 0.8,
-          fillColor = ~pal(map_dat_proj[[input$var]]),
+          fillColor = ~pal(map_dat_proj[[selected_var]]),
           highlightOptions = highlightOptions(
             color = "white",
             weight = 2,
             bringToFront = TRUE
           ),
-          popup = ~custom_popup,
+          popup = ~custom_popup(county_name, aland, awater),
           popupOptions = popupOptions(closeButton = FALSE),
           label = ~county_name,
           group = 'Counties'
-        )
+        ) %>% 
+        clearControls() %>% 
+        addLegend(
+          "bottomright",
+          pal = pal,
+          values = map_dat_proj[[selected_var]],
+          title = selected_var,
+          labFormat = labelFormat(prefix = "$"),
+          opacity = 1
+        ) %>%
+        addFullscreenControl()
     })
     
     
