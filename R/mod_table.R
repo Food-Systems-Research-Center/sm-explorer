@@ -24,7 +24,12 @@ mod_table_server <- function(id){
     
     data(dat)
     output$table <- DT::renderDT({
-      dat
+      datatable(
+        dat,
+        filter = 'top',
+        style = 'bootstrap'
+        # extensions = 'Buttons'
+      )
     })
  
   })

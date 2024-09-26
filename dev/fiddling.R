@@ -9,8 +9,8 @@ pacman::p_load(
   stringr
 )
 
-dat <- readRDS('ne_data.rds')
-counties <- readRDS('counties.RDS')
+dat <- readRDS('dev/ne_data.rds')
+counties <- readRDS('dev/counties.RDS')
 
 get_str(dat)
 get_str(counties)

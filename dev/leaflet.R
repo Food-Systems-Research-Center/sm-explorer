@@ -1,13 +1,23 @@
+
+# Housekeeping ------------------------------------------------------------
+
+
 pacman::p_load(
   leaflet,
   sf,
   maps,
-  dplyr
+  dplyr,
+  mapview,
+  tidyr
 )
 
 load('data/map_dat.rda')
 dat <- map_dat
+dat <- readRDS('dev/ne_economics.RDS') %>% 
+  pivot_wider(names_from = 'variable_name')  
+counties <- readRDS('dev/counties.RDS')
 
+map_dat <- inner_join(counties, dat, by = 'fips')
 
 
 # Leaflet Map -------------------------------------------------------------
@@ -20,24 +30,27 @@ leaflet(options = leafletOptions(minZoom = 0, maxZoom = 18))
 # fitBounds()
 # clearBounds()
 
+# Have to project into 4326
+map_dat_proj <- st_transform(map_dat, 4326) %>%
+  mutate(across(c(aland, awater), 
+                ~ format(round(. / 1000000, 1), big.mark = ',') %>% 
+                  paste('sq km')))
+  
 # Popup Content
 content <- ~paste(
   "<div style='text-align: center;'>
   <b><a href='https://www.samurainoodle.com/'>",
   county_name,
   "</a></b></div>",
-  "<strong>Land Area:</strong>", round(aland, 3), "<br>",
-  "<strong>Water Area:</strong>", round(awater, 3), "<br>",
-  "<strong>Hardship Index:</strong>", round(hardship, 3)
+  "<strong>Land Area:</strong>", aland, "<br>",
+  "<strong>Water Area:</strong>", awater, "<br>",
+  "<strong>Hardship Index:</strong>", round(mean_farm_income_per_operation, 2)
 )
-
-# Have to project into 4326
-map_dat_proj <- st_transform(map_dat, 4326)
 
 # Color palette
 pal <- colorNumeric(
   palette = "YlGn",
-  domain = map_dat$hardship,
+  domain = map_dat$mean_farm_income_per_operation,
   reverse = FALSE
 )
 
@@ -59,13 +72,33 @@ leaflet(map_dat_proj) %>%
     providers$CartoDB.Positron, 
     group = 'CartoDB.Positron'
   ) %>%
+  addProviderTiles(
+    providers$Stadia.StamenTerrain, 
+    group = 'Stadia.StamenTerrain'
+  ) %>%
+  addProviderTiles(
+    providers$Stadia.Outdoors, 
+    group = 'Stadia.Outdoors'
+  ) %>%
+  addProviderTiles(
+    providers$Stadia.StamenWatercolor, 
+    group = 'Stadia.StamenWatercolor'
+  ) %>%
+  addProviderTiles(
+    providers$USGS.USImageryTopo, 
+    group = 'USGS.USImageryTopo'
+  ) %>%
+  addProviderTiles(
+    providers$USGS.USImagery, 
+    group = 'USGS.USImagery'
+  ) %>%
   addPolygons(
     color = "black",
     weight = 1, 
     smoothFactor = 0.5,
     opacity = 1.0, 
     fillOpacity = 0.8,
-    fillColor = ~pal(map_dat$hardship),
+    fillColor = ~pal(map_dat$mean_farm_income_per_operation),
     highlightOptions = highlightOptions(
       color = "white",
       weight = 2,
@@ -81,7 +114,12 @@ leaflet(map_dat_proj) %>%
       'Stadia AlidadeSmooth',
       'CartoDB.Positron',
       'CartoDB.PositronNoLabels',
-      'CartoDB.Voyager'
+      'CartoDB.Voyager',
+      'Stadia.StamenTerrain',
+      'Stadia.Outdoors',
+      'Stadia.StamenWatercolor',
+      'USGS.USImageryTopo',
+      'USGS.USImagery'
     ), 
     overlayGroups = c('Counties'),
     options = layersControlOptions(collapsed = FALSE)
@@ -90,9 +128,9 @@ leaflet(map_dat_proj) %>%
   addLegend(
     "bottomright",
     pal = pal,
-    values = ~ hardship,
-    title = "Hardship Index",
-    labFormat = labelFormat(prefix = ""),
+    values = ~ mean_farm_income_per_operation,
+    title = "Mean Income per Farm",
+    labFormat = labelFormat(prefix = "$"),
     opacity = 1
   )
 
