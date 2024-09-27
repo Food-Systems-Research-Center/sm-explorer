@@ -18,6 +18,7 @@ Imports:
     shinipsum,
     shiny,
     shinydashboard,
+    shinyWidgets,
     spelling,
     tidyr
 Suggests: 

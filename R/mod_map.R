@@ -12,6 +12,7 @@
 #' @import mapview
 #' @import sf
 #' @import leaflet.extras
+#' @import shinyWidgets
 mod_map_ui <- function(id) {
   ns <- NS(id)
   tagList(
@@ -28,46 +29,49 @@ mod_map_ui <- function(id) {
       width = 300,
       height = "auto",
       
-      h2("Metric Explorer"),
+      h2('Select Metrics', style = 'text-align: center; font-weight: bold;'),
       style = "z-index: 5001; background-color: rgba(255,255,255,0.8); 
         padding: 15px; border-radius: 8px; max-width: 300; 
         box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);",
       
+      # Filter buttons
       selectInput(
         ns("dimension"), 
         "Select Dimension:",
-        choices = c(
-          'Environment' = 'environment',
-          'Economics' = 'economics',
-          'Production' = 'production',
-          'Human' = 'human',
-          'Health' = 'health'
-        ),
+        choices = unique(dat$dimension),
+        selected = NULL,
         width = '100%'
       ),
       selectInput(
         ns("index"), 
         "Select Index:",
-        choices = c(
-          'Environment' = 'environment',
-          'Economics' = 'economics',
-          'Production' = 'production',
-          'Human' = 'human',
-          'Health' = 'health'
-        ),
+        choices = NULL,
         width = '100%'
       ),
       selectInput(
-        ns("var"), 
-        "Select Metric:",
-        choices = c(
-          "Income per Operation" = "mean_farm_income_per_operation",
-          "Labor Cost" = "hired_labor_expense_per_farm",
-          "Total Expenses per Operation" = 'total_expenses_per_operation',
-          "Number of Operations with Hired Labor" = "hired_labor_operations"
-        ),
-        selected = "mean_farm_income_per_operation",
+        ns("indicator"), 
+        "Select Indicator:",
+        choices = NULL,
         width = '100%'
+      ),
+      selectInput(
+        ns("metric"), 
+        "Select Metric:",
+        choices = NULL,
+        width = '100%'
+      ),
+      selectInput(
+        ns("year"), 
+        "Select Year:",
+        choices = NULL,
+        width = '100%'
+      ),
+      actionBttn(
+        ns('update_map'),
+        'Update Map',
+        block = TRUE,
+        style = 'jelly',
+        color = 'success'
       )
     )
   )
@@ -82,23 +86,34 @@ mod_map_server <- function(id){
     output$map_plot <- renderLeaflet({
       
       # Prep -----
-      data('map_dat_proj')
+      data('dat')
+      data('counties_2021')
+      data('counties_2024')
+      
+      # Initial filter with dat
+      initial_dat <- dat %>% 
+        filter(variable_name == 'local_sales_pct')
+      
+      # Make spatial object with initial_dat
+      initial_dat <- counties_2021 %>% 
+        inner_join(initial_dat, by = 'fips')
+      
+      # Prep popup and palette
       custom_popup <- ~paste0(
         "<div style='text-align: center;'>
         <b><a href='https://www.samurainoodle.com/'>",
         county_name,
         "</a></b></div>",
-        "<strong>Land Area:</strong>", aland, "<br>",
-        "<strong>Water Area:</strong>", awater, "<br>"
+        "<strong>Land Area:</strong> ", round(aland / 1000000, 1), " sq km<br>",
+        "<strong>Water Area:</strong> ", round(awater / 1000000, 1), " sq km<br>"
       )
-      pal <- colorNumeric(
-        palette = "YlGn",
-        domain = map_dat_proj$mean_farm_income_per_operation,
-        reverse = FALSE
+      county_palette <- colorFactor(
+        "viridis",
+        initial_dat$county_name
       )
       
-      # Leaflet -----
-      leaflet(map_dat_proj) %>% 
+      # Initial Map -----
+      leaflet(initial_dat) %>% 
         addProviderTiles(
           providers$Stadia.AlidadeSmooth, 
           group = 'Stadia AlidadeSmooth'
@@ -124,8 +139,8 @@ mod_map_server <- function(id){
           weight = 1, 
           smoothFactor = 0.5,
           opacity = 1.0, 
-          fillOpacity = 0.8,
-          # fillColor = ~pal(map_dat_proj$mean_farm_income_per_operation),
+          fillOpacity = 0.6,
+          fillColor = ~county_palette(initial_dat$county_name),
           highlightOptions = highlightOptions(
             color = "white",
             weight = 2,
@@ -148,38 +163,82 @@ mod_map_server <- function(id){
           options = layersControlOptions(collapsed = TRUE),
           position = 'topleft'
         ) %>% 
-        addLegend(
-          "bottomright",
-          pal = pal,
-          values = ~ mean_farm_income_per_operation,
-          title = "Mean Income per Farm",
-          labFormat = labelFormat(prefix = "$"),
-          opacity = 1
-        ) %>% 
         addFullscreenControl()
     })
+    
+    
+    # Filter Dataset -----
+    observeEvent(input$dimension, {
+      filtered <- filter(dat, dimension == input$dimension)
+      updateSelectInput(session, "index", choices = unique(filtered$index))
+    })
+    
+    observeEvent(input$index, {
+      filtered <- filter(dat, index == input$index)
+      updateSelectInput(session, "indicator", choices = unique(filtered$indicator))
+    })
+    
+    observeEvent(input$indicator, {
+      filtered <- filter(dat, indicator == input$indicator)
+      updateSelectInput(session, "metric", choices = unique(filtered$variable_name))
+    })
+    
+    observeEvent(input$metric, {
+      filtered <- filter(dat, variable_name == input$metric)
+      updateSelectInput(
+        session, 
+        "year", 
+        choices = sort(unique(filtered$year), decreasing = TRUE)
+      )
+    })
+    
+    # observeEvent(input$year, {
+    #   filtered <- filter(dat, variable_name == input$metric)
+    #   updateSelectInput(session, "year", choices = unique(filtered$year))
+    # })
+    
+    
+    # Update Map -----
+    observeEvent(input$update_map, {
+      req(input$dimension, input$index, input$indicator, input$metric, input$year)
       
-    # Observe -----
-    observe({
-      selected_var <- input$var
-      custom_popup <- function(county_name, aland, awater) {
+      # Filter dataset based on user choices
+      updated_dat <- dat %>% 
+        filter(
+          dimension == input$dimension,
+          index == input$index,
+          indicator == input$indicator,
+          variable_name == input$metric,
+          year == input$year
+        )
+      
+      # Join with counties
+      updated_dat <- counties_2021 %>% 
+        inner_join(updated_dat, by = 'fips')
+      
+      # Popups and palette
+      custom_popup <- function(county_name, 
+                               aland, 
+                               awater, 
+                               variable_name,
+                               value) {
         paste0(
           "<div style='text-align: center;'>",
           "<b><a href='https://www.samurainoodle.com/'>", county_name, "</a></b><br>",
-          "<strong>Land Area:</strong> ", aland, "<br>",
-          "<strong>Water Area:</strong> ", awater, "<br>",
-          "<strong>", selected_var, ":</strong> ", map_dat_proj[[selected_var]], "<br>"
+          "<strong>Land Area:</strong> ", round(aland / 1000000, 2), " sq km<br>",
+          "<strong>Water Area:</strong> ", round(awater / 100000, 2), " sq km<br>",
+          "<strong>", variable_name, ":</strong> ", round(value, 2)
         )
       }
       pal <- colorNumeric(
         palette = "YlGn",
-        domain = map_dat_proj[[selected_var]],
+        domain = updated_dat$value,
         reverse = FALSE
       )
-      
+
       leafletProxy(
         ns("map_plot"), 
-        data = map_dat_proj
+        data = updated_dat
       ) %>%
         clearGroup('Counties') %>%
         addPolygons(
@@ -187,30 +246,29 @@ mod_map_server <- function(id){
           weight = 1, 
           smoothFactor = 0.5,
           opacity = 1.0, 
-          fillOpacity = 0.8,
-          fillColor = ~pal(map_dat_proj[[selected_var]]),
+          fillOpacity = 0.75,
+          fillColor = ~pal(updated_dat$value),
           highlightOptions = highlightOptions(
             color = "white",
             weight = 2,
             bringToFront = TRUE
           ),
-          popup = ~custom_popup(county_name, aland, awater),
+          popup = ~custom_popup(county_name, aland, awater, variable_name, value),
           popupOptions = popupOptions(closeButton = FALSE),
           label = ~county_name,
           group = 'Counties'
         ) %>% 
         clearControls() %>% 
         addLegend(
-          "bottomright",
+          "bottomleft",
           pal = pal,
-          values = map_dat_proj[[selected_var]],
-          title = selected_var,
+          values = ~value,
+          title = ~variable_name[1],
           labFormat = labelFormat(prefix = "$"),
           opacity = 1
         ) %>%
         addFullscreenControl()
     })
-    
     
   })
 }

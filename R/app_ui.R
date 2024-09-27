@@ -58,7 +58,7 @@ app_ui <- function(request) {
           #     padding: 0;    /* Remove padding */
           #   }
           # "))),
-            h2(strong('Food Hardship Index 2020')),
+            h2(strong('Sustainability Metrics Explorer')),
             mod_map_ui('map_plot')
           ),
           tabItem(
