@@ -16,6 +16,7 @@ app_ui <- function(request) {
         sidebarMenu(
           id = 'tabs',
           menuItem("Interactive Map", tabName = "map_tab", icon = icon("map")),
+          menuItem("Tree Framework", tabName = "tree_tab", icon = icon("sitemap")),
           menuItem("Data Explorer", tabName = "table_tab", icon = icon("table")),
           menuItem("Random Graph 1", tabName = "random_tab_1", icon = icon("dashboard")),
           conditionalPanel(
@@ -49,17 +50,13 @@ app_ui <- function(request) {
         tabItems(
           tabItem(
             tabName = 'map_tab',
-          #   tags$head(tags$style(HTML("
-          #   .leaflet-container {
-          #     height: 100vh; /* Full height of the viewport */
-          #     width: 100%;   /* Full width */
-          #   }
-          #   .content-wrapper {
-          #     padding: 0;    /* Remove padding */
-          #   }
-          # "))),
             h2(strong('Sustainability Metrics Explorer')),
             mod_map_ui('map_plot')
+          ),
+          tabItem(
+            tabName = 'tree_tab',
+            h2(strong('Tree Diagram')),
+            mod_tree_ui('tree')
           ),
           tabItem(
             tabName = 'table_tab',

@@ -37,6 +37,54 @@ pre <- dat %>%
 
 get_str(pre)
 
-# usethis::use_data(dat)
+# usethis::use_data(dat, overwrite = TRUE)
 # usethis::use_data(counties_2021)
 # usethis::use_data(counties_2024)
+
+
+
+# Correlation plot --------------------------------------------------------
+
+
+pacman::p_load(
+  GGally,
+  ggplot2,
+  ggcorrplot,
+  tidyr
+)
+
+load('data/dat.rda')
+get_str(dat)
+
+test <- dat %>% 
+  group_by(fips, county_name, state_name) %>% # Group by columns that uniquely identify each record
+  filter(year == max(year, na.rm = TRUE)) %>% # Keep only the latest year for each group
+  ungroup() %>% 
+  select(-year) %>% 
+  unique() %>% 
+  pivot_wider(names_from = 'variable_name', values_from = 'value') %>% 
+  unnest()
+get_str(test)
+glimpse(test)
+test %>% 
+  select(where(is.numeric))
+
+
+
+
+
+
+
+dat <- dat %>% 
+  unique() %>% 
+  pivot_wider(names_from = c('variable_name', 'year'))
+get_str(dat)
+
+# corr plot
+dat %>% 
+  select((where(is.numeric)))
+get_str(dat)
+test <- cor(dat)
+ggcorrplot::ggcorrplot(dat)
+?ggcorrplot
+

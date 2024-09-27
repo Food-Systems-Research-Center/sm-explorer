@@ -8,6 +8,8 @@ License: GPL (>= 3)
 Imports: 
     bslib,
     config,
+    conflicted,
+    dplyr,
     DT,
     ggplot2,
     golem,

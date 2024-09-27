@@ -22,18 +22,15 @@ dat <- raw %>%
   mutate(tooltip = random_text(nwords = 25)) %>% 
   group_by(Dimension) %>%
   mutate(
-    count = n(),
-    count_ = count,
-    count_x1.25 = count * 1.25,
-    count_x1.5 = count * 1.5,
-    count_x2 = count * 2,
-    Nodes = 1
+    count_ = n()
   ) %>%
   ungroup()
 get_str(dat)
+tree_dat <- dat
+usethis::use_data(tree_dat)
 
 vir <- viridis(5)
-colors = c(
+colors <- c(
   'grey',
   vir[1],
   vir[2],
@@ -51,6 +48,8 @@ colors = c(
   rep(vir[4], 21),
   rep(vir[5], 24)
 )
+
+# usethis::use_data(colors)
 
 
 # Example -----------------------------------------------------------------

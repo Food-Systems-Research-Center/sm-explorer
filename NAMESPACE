@@ -2,6 +2,8 @@
 
 export(run_app)
 import(DT)
+import(collapsibleTree)
+import(dplyr)
 import(ggplot2)
 import(leaflet)
 import(leaflet.extras)

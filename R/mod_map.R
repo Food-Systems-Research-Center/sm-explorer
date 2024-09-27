@@ -13,6 +13,7 @@
 #' @import sf
 #' @import leaflet.extras
 #' @import shinyWidgets
+#' @import dplyr
 mod_map_ui <- function(id) {
   ns <- NS(id)
   tagList(
@@ -86,17 +87,17 @@ mod_map_server <- function(id){
     output$map_plot <- renderLeaflet({
       
       # Prep -----
-      data('dat')
-      data('counties_2021')
-      data('counties_2024')
+      load('data/dat.rda')
+      load('data/counties_2021.rda')
+      load('data/counties_2024.rda')
       
       # Initial filter with dat
       initial_dat <- dat %>% 
-        filter(variable_name == 'local_sales_pct')
+        dplyr::filter(variable_name == 'local_sales_pct')
       
       # Make spatial object with initial_dat
       initial_dat <- counties_2021 %>% 
-        inner_join(initial_dat, by = 'fips')
+        dplyr::inner_join(initial_dat, by = 'fips')
       
       # Prep popup and palette
       custom_popup <- ~paste0(
@@ -139,7 +140,7 @@ mod_map_server <- function(id){
           weight = 1, 
           smoothFactor = 0.5,
           opacity = 1.0, 
-          fillOpacity = 0.6,
+          fillOpacity = 0.5,
           fillColor = ~county_palette(initial_dat$county_name),
           highlightOptions = highlightOptions(
             color = "white",
@@ -169,22 +170,22 @@ mod_map_server <- function(id){
     
     # Filter Dataset -----
     observeEvent(input$dimension, {
-      filtered <- filter(dat, dimension == input$dimension)
+      filtered <- dplyr::filter(dat, dimension == input$dimension)
       updateSelectInput(session, "index", choices = unique(filtered$index))
     })
     
     observeEvent(input$index, {
-      filtered <- filter(dat, index == input$index)
+      filtered <- dplyr::filter(dat, index == input$index)
       updateSelectInput(session, "indicator", choices = unique(filtered$indicator))
     })
     
     observeEvent(input$indicator, {
-      filtered <- filter(dat, indicator == input$indicator)
+      filtered <- dplyr::filter(dat, indicator == input$indicator)
       updateSelectInput(session, "metric", choices = unique(filtered$variable_name))
     })
     
     observeEvent(input$metric, {
-      filtered <- filter(dat, variable_name == input$metric)
+      filtered <- dplyr::filter(dat, variable_name == input$metric)
       updateSelectInput(
         session, 
         "year", 
@@ -192,10 +193,9 @@ mod_map_server <- function(id){
       )
     })
     
-    # observeEvent(input$year, {
-    #   filtered <- filter(dat, variable_name == input$metric)
-    #   updateSelectInput(session, "year", choices = unique(filtered$year))
-    # })
+    observeEvent(input$year, {
+      filtered <- dplyr::filter(dat, variable_name == input$metric)
+    })
     
     
     # Update Map -----
@@ -204,7 +204,7 @@ mod_map_server <- function(id){
       
       # Filter dataset based on user choices
       updated_dat <- dat %>% 
-        filter(
+        dplyr::filter(
           dimension == input$dimension,
           index == input$index,
           indicator == input$indicator,
@@ -214,7 +214,7 @@ mod_map_server <- function(id){
       
       # Join with counties
       updated_dat <- counties_2021 %>% 
-        inner_join(updated_dat, by = 'fips')
+        dplyr::inner_join(updated_dat, by = 'fips')
       
       # Popups and palette
       custom_popup <- function(county_name, 
