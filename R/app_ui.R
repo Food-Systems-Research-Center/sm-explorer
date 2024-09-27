@@ -16,7 +16,7 @@ app_ui <- function(request) {
         sidebarMenu(
           id = 'tabs',
           menuItem("Interactive Map", tabName = "map_tab", icon = icon("map")),
-          menuItem("Tree Framework", tabName = "tree_tab", icon = icon("sitemap")),
+          menuItem("Metrics Framework", tabName = "tree_tab", icon = icon("sitemap")),
           menuItem("Data Explorer", tabName = "table_tab", icon = icon("table")),
           menuItem("Random Graph 1", tabName = "random_tab_1", icon = icon("dashboard")),
           conditionalPanel(
@@ -39,7 +39,7 @@ app_ui <- function(request) {
             condition = "input.tabs == 'random_tab_2'",
             div(
               style = "display: flex; justify-content: center; align-items: center; height: 50px;",
-              actionButton("create_graph_2", "General Kenobi")
+              actionButton("create_graph_2", "Create Graph")
             )
           )
         )
@@ -55,7 +55,7 @@ app_ui <- function(request) {
           ),
           tabItem(
             tabName = 'tree_tab',
-            h2(strong('Tree Diagram')),
+            h2(strong('Metrics Framework')),
             mod_tree_ui('tree')
           ),
           tabItem(

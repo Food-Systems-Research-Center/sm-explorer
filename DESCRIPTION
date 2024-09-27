@@ -7,6 +7,7 @@ Description: This is the description.
 License: GPL (>= 3)
 Imports: 
     bslib,
+    collapsibleTree,
     config,
     conflicted,
     dplyr,
@@ -17,6 +18,7 @@ Imports:
     leaflet.extras,
     mapview,
     pkgload,
+    sf,
     shinipsum,
     shiny,
     shinydashboard,
