@@ -17,31 +17,31 @@ app_ui <- function(request) {
           id = 'tabs',
           menuItem("Interactive Map", tabName = "map_tab", icon = icon("map")),
           menuItem("Metrics Framework", tabName = "tree_tab", icon = icon("sitemap")),
-          menuItem("Data Explorer", tabName = "table_tab", icon = icon("table")),
-          menuItem("Random Graph 1", tabName = "random_tab_1", icon = icon("dashboard")),
-          conditionalPanel(
-            condition = "input.tabs == 'random_tab_1'",
-            div(
-              style = "text-align: center; margin-bottom: 10px; width: 100%; white-space: normal; overflow-wrap: break-word;",
-              HTML(
-                "<p>Testing some HTML text. fherul erghue ghrukl gherklug
-                erhgkludfh g. fhlweuf efh woeufh weoufh ewwef ouwehf weouf
-                f weruffh uher fweuhf wkleuhf wekluf.</p>"
-              )
-            ),
-            div(
-              style = "display: flex; justify-content: center; align-items: center; height: 50px;",
-              actionButton("create_graph_1", "Hello There")
-            )
-          ),
-          menuItem("Random Graph 2", tabName = "random_tab_2", icon = icon("dashboard")),
-          conditionalPanel(
-            condition = "input.tabs == 'random_tab_2'",
-            div(
-              style = "display: flex; justify-content: center; align-items: center; height: 50px;",
-              actionButton("create_graph_2", "Create Graph")
-            )
-          )
+          menuItem("Data Explorer", tabName = "table_tab", icon = icon("table"))
+          # menuItem("Random Graph 1", tabName = "random_tab_1", icon = icon("dashboard")),
+          # conditionalPanel(
+          #   condition = "input.tabs == 'random_tab_1'",
+          #   div(
+          #     style = "text-align: center; margin-bottom: 10px; width: 100%; white-space: normal; overflow-wrap: break-word;",
+          #     HTML(
+          #       "<p>Testing some HTML text. fherul erghue ghrukl gherklug
+          #       erhgkludfh g. fhlweuf efh woeufh weoufh ewwef ouwehf weouf
+          #       f weruffh uher fweuhf wkleuhf wekluf.</p>"
+          #     )
+          #   ),
+          #   div(
+          #     style = "display: flex; justify-content: center; align-items: center; height: 50px;",
+          #     actionButton("create_graph_1", "Hello There")
+          #   )
+          # ),
+          # menuItem("Random Graph 2", tabName = "random_tab_2", icon = icon("dashboard")),
+          # conditionalPanel(
+          #   condition = "input.tabs == 'random_tab_2'",
+          #   div(
+          #     style = "display: flex; justify-content: center; align-items: center; height: 50px;",
+          #     actionButton("create_graph_2", "Create Graph")
+          #   )
+          # )
         )
       ),
       
@@ -62,15 +62,15 @@ app_ui <- function(request) {
             tabName = 'table_tab',
             h2(strong('Data Explorer')),
             mod_table_ui('table')
-          ),
-          tabItem(tabName = "random_tab_1",
-                  h2('The First Random Graph'),
-                  mod_ipsum_graph_ui("random_graph_1")
-          ),
-          tabItem(tabName = "random_tab_2",
-                  h2('The Second Random Graph'),
-                  mod_ipsum_graph_2_ui("random_graph_2")
           )
+          # tabItem(tabName = "random_tab_1",
+          #         h2('The First Random Graph'),
+          #         mod_ipsum_graph_ui("random_graph_1")
+          # ),
+          # tabItem(tabName = "random_tab_2",
+          #         h2('The Second Random Graph'),
+          #         mod_ipsum_graph_2_ui("random_graph_2")
+          # )
         )
       )
     )

@@ -42,49 +42,38 @@ get_str(pre)
 # usethis::use_data(counties_2024)
 
 
-
-# Correlation plot --------------------------------------------------------
+# Updating Data -----------------------------------------------------------
 
 
 pacman::p_load(
-  GGally,
-  ggplot2,
-  ggcorrplot,
-  tidyr
+  dplyr,
+  sf
 )
 
-load('data/dat.rda')
+# Check old dat
 get_str(dat)
 
-test <- dat %>% 
-  group_by(fips, county_name, state_name) %>% # Group by columns that uniquely identify each record
-  filter(year == max(year, na.rm = TRUE)) %>% # Keep only the latest year for each group
-  ungroup() %>% 
-  select(-year) %>% 
-  unique() %>% 
-  pivot_wider(names_from = 'variable_name', values_from = 'value') %>% 
-  unnest()
-get_str(test)
-glimpse(test)
-test %>% 
-  select(where(is.numeric))
+# Need fips, county_name, state_name, year, variable_name, value,
+# dimension, index, indicator
 
 
+dat <- readRDS('dev/data/aggregated_metrics.rds')
+meta <- readRDS('dev/data/aggregated_meta.rds')
+counties <- readRDS('dev/data/ne_counties_2024.RDS')
+fips_key <- readRDS('dev/data/fips_key.RDS')
 
 
+get_str(dat)
+get_str(meta)
 
 
-
-dat <- dat %>% 
-  unique() %>% 
-  pivot_wider(names_from = c('variable_name', 'year'))
+# have to join to fips key, then meta to get dimensions
+dat <- inner_join(dat, fips_key, by = 'fips') %>% 
+  left_join(meta, by = 'variable_name') %>% 
+  select(-c(scope:last_col())) %>% 
+  filter(!is.na(dimension)) %>% 
+  mutate(value = as.numeric(value))
+    
 get_str(dat)
 
-# corr plot
-dat %>% 
-  select((where(is.numeric)))
-get_str(dat)
-test <- cor(dat)
-ggcorrplot::ggcorrplot(dat)
-?ggcorrplot
-
+usethis::use_data(dat, overwrite = TRUE)

@@ -34,7 +34,7 @@ mod_map_ui <- function(id) {
       style = "z-index: 5001; background-color: rgba(255,255,255,0.8); 
         padding: 15px; border-radius: 8px; max-width: 300; 
         box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);",
-      
+
       # Filter buttons
       selectInput(
         ns("dimension"), 
@@ -92,26 +92,23 @@ mod_map_server <- function(id){
       load('data/counties_2024.rda')
       
       # Initial filter with dat
-      initial_dat <- dat %>% 
+      initial_dat <- dat %>%
         dplyr::filter(variable_name == 'local_sales_pct')
-      
+
       # Make spatial object with initial_dat
-      initial_dat <- counties_2021 %>% 
+      initial_dat <- counties_2021 %>%
         dplyr::inner_join(initial_dat, by = 'fips')
       
       # Prep popup and palette
       custom_popup <- ~paste0(
-        "<div style='text-align: center;'>
-        <b><a href='https://www.samurainoodle.com/'>",
-        county_name,
-        "</a></b></div>",
+        "<div style='text-align: center;'><b>", county_name, "</b></div>",
         "<strong>Land Area:</strong> ", round(aland / 1000000, 1), " sq km<br>",
         "<strong>Water Area:</strong> ", round(awater / 1000000, 1), " sq km<br>"
       )
-      county_palette <- colorFactor(
-        "viridis",
-        initial_dat$county_name
-      )
+      # county_palette <- colorFactor(
+      #   "viridis",
+      #   initial_dat$county_name
+      # )
       
       # Initial Map -----
       leaflet(initial_dat) %>% 
@@ -141,7 +138,8 @@ mod_map_server <- function(id){
           smoothFactor = 0.5,
           opacity = 1.0, 
           fillOpacity = 0.5,
-          fillColor = ~county_palette(initial_dat$county_name),
+          # fillColor = ~county_palette(initial_dat$county_name),
+          fillColor = 'lightgray',
           highlightOptions = highlightOptions(
             color = "white",
             weight = 2,
@@ -201,7 +199,6 @@ mod_map_server <- function(id){
     # Update Map -----
     observeEvent(input$update_map, {
       req(input$dimension, input$index, input$indicator, input$metric, input$year)
-      
       # Filter dataset based on user choices
       updated_dat <- dat %>% 
         dplyr::filter(
@@ -218,15 +215,15 @@ mod_map_server <- function(id){
       
       # Popups and palette
       custom_popup <- function(county_name, 
-                               aland, 
-                               awater, 
+                               # aland, 
+                               # awater, 
                                variable_name,
                                value) {
         paste0(
           "<div style='text-align: center;'>",
-          "<b><a href='https://www.samurainoodle.com/'>", county_name, "</a></b><br>",
-          "<strong>Land Area:</strong> ", round(aland / 1000000, 2), " sq km<br>",
-          "<strong>Water Area:</strong> ", round(awater / 100000, 2), " sq km<br>",
+          "<b>", county_name, "</b><br>",
+          # "<strong>Land Area:</strong> ", round(aland / 1000000, 2), " sq km<br>",
+          # "<strong>Water Area:</strong> ", round(awater / 100000, 2), " sq km<br>",
           "<strong>", variable_name, ":</strong> ", round(value, 2)
         )
       }
@@ -253,7 +250,7 @@ mod_map_server <- function(id){
             weight = 2,
             bringToFront = TRUE
           ),
-          popup = ~custom_popup(county_name, aland, awater, variable_name, value),
+          popup = ~custom_popup(county_name, variable_name, value),
           popupOptions = popupOptions(closeButton = FALSE),
           label = ~county_name,
           group = 'Counties'
@@ -264,7 +261,8 @@ mod_map_server <- function(id){
           pal = pal,
           values = ~value,
           title = ~variable_name[1],
-          labFormat = labelFormat(prefix = "$"),
+          labFormat = labelFormat(prefix = " "),
+          # labFormat = labelFormat(prefix = "$"),
           opacity = 1
         ) %>%
         addFullscreenControl()
