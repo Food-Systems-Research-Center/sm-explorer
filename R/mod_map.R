@@ -17,6 +17,16 @@
 mod_map_ui <- function(id) {
   ns <- NS(id)
   tagList(
+    tags$style(HTML("
+        .centered-button {
+          display: flex;
+          justify-content: center; /* Center horizontally */
+          width: 50%; /* Full width for the container */
+        }
+        .custom-action-button {
+          width: 200px; /* Set the desired width */
+        }
+      ")),
     leafletOutput(ns('map_plot'), height = '80vh', width = '100%'),
     absolutePanel(
       id = "controls",
@@ -35,7 +45,7 @@ mod_map_ui <- function(id) {
         padding: 15px; border-radius: 8px; max-width: 300; 
         box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);",
 
-      # Filter buttons
+      # Filter buttons -----
       selectInput(
         ns("dimension"), 
         "Select Dimension:",
@@ -67,13 +77,36 @@ mod_map_ui <- function(id) {
         choices = NULL,
         width = '100%'
       ),
+      
+      # Action button
       actionBttn(
         ns('update_map'),
         'Update Map',
         block = TRUE,
         style = 'jelly',
-        color = 'success'
-      )
+        color = 'primary',
+        icon = icon('arrows-rotate')
+      ),
+      
+      tags$style(HTML(paste0(
+        "#", ns("update_map"), " { ",
+        "background-color: #154734 !important; ",
+        "color: white !important; ",
+        "} "
+      )))
+      # tags$style(HTML(paste0(
+      #   "#", ns("update_map"), " { ",
+      #   "background-color: #154734 !important; ", # Button background color
+      #   "color: white !important; ",              # Text color
+      #   "width: 200px !important; ",              # Set button width
+      #   "} ",
+      #   
+      #   "#", ns("button_container"), " { ",
+      #   "display: flex; ",                        # Flexbox layout for centering
+      #   "justify-content: center; ",              # Center the button
+      #   "align-items: center; ",              # Center the button
+      #   "}"
+      # )))
     )
   )
 }
@@ -199,6 +232,7 @@ mod_map_server <- function(id){
     # Update Map -----
     observeEvent(input$update_map, {
       req(input$dimension, input$index, input$indicator, input$metric, input$year)
+      
       # Filter dataset based on user choices
       updated_dat <- dat %>% 
         dplyr::filter(

@@ -6,52 +6,54 @@
 #' @import shinydashboard
 #' @noRd
 #' 
+source('R/my_theme.R')
 app_ui <- function(request) {
   tagList(
     dashboardPage(
-      dashboardHeader(title = "SMExplorer"),
+      dashboardHeader(
+        title = "SMExplorer"
+      ),
       
       # Sidebar -----------------------------------------------------------
       dashboardSidebar(
         sidebarMenu(
           id = 'tabs',
           menuItem("Interactive Map", tabName = "map_tab", icon = icon("map")),
-          menuItem("Metrics Framework", tabName = "tree_tab", icon = icon("sitemap")),
-          menuItem("Data Explorer", tabName = "table_tab", icon = icon("table"))
-          # menuItem("Random Graph 1", tabName = "random_tab_1", icon = icon("dashboard")),
+          menuItem("Graph Explorer", tabName = "graph_tab", icon = icon("chart-simple")),
           # conditionalPanel(
-          #   condition = "input.tabs == 'random_tab_1'",
+          #   condition = "input.tabs == 'graph_tab'",
           #   div(
           #     style = "text-align: center; margin-bottom: 10px; width: 100%; white-space: normal; overflow-wrap: break-word;",
-          #     HTML(
-          #       "<p>Testing some HTML text. fherul erghue ghrukl gherklug
-          #       erhgkludfh g. fhlweuf efh woeufh weoufh ewwef ouwehf weouf
-          #       f weruffh uher fweuhf wkleuhf wekluf.</p>"
-          #     )
+          #     HTML("<p>Choose variables to explore using the options below.</p>")
           #   ),
           #   div(
           #     style = "display: flex; justify-content: center; align-items: center; height: 50px;",
-          #     actionButton("create_graph_1", "Hello There")
+          #     selectInput("select_x_var", "Choose x variable")
           #   )
+          #   # div(
+          #   #   style = "display: flex; justify-content: center; align-items: center; height: 50px;",
+          #   #   actionButton("show_graph", "Create Graphs")
+          #   # )
           # ),
-          # menuItem("Random Graph 2", tabName = "random_tab_2", icon = icon("dashboard")),
-          # conditionalPanel(
-          #   condition = "input.tabs == 'random_tab_2'",
-          #   div(
-          #     style = "display: flex; justify-content: center; align-items: center; height: 50px;",
-          #     actionButton("create_graph_2", "Create Graph")
-          #   )
-          # )
+          menuItem("Metrics Framework", tabName = "tree_tab", icon = icon("sitemap")),
+          menuItem("Data Explorer", tabName = "table_tab", icon = icon("table"))
         )
       ),
       
       # Body ---------------------------------------------------------------
       dashboardBody(
+        # Formatting from my_theme.R CSS
+        my_theme,
         tabItems(
           tabItem(
             tabName = 'map_tab',
             h2(strong('Sustainability Metrics Explorer')),
             mod_map_ui('map_plot')
+          ),
+          tabItem(
+            tabName = 'graph_tab',
+            h2(strong('Graph Explorer')),
+            mod_graph_ui("graph")
           ),
           tabItem(
             tabName = 'tree_tab',
@@ -63,14 +65,6 @@ app_ui <- function(request) {
             h2(strong('Data Explorer')),
             mod_table_ui('table')
           )
-          # tabItem(tabName = "random_tab_1",
-          #         h2('The First Random Graph'),
-          #         mod_ipsum_graph_ui("random_graph_1")
-          # ),
-          # tabItem(tabName = "random_tab_2",
-          #         h2('The Second Random Graph'),
-          #         mod_ipsum_graph_2_ui("random_graph_2")
-          # )
         )
       )
     )
@@ -87,10 +81,10 @@ app_ui <- function(request) {
 #' @noRd
 golem_add_external_resources <- function() {
   add_resource_path(
-    "www",
+    "www", 
     app_sys("app/www")
   )
-
+  
   tags$head(
     favicon(),
     bundle_resources(

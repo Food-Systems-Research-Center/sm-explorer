@@ -487,7 +487,7 @@
         "whisker",
         "withr"
       ],
-      "Hash": "163a20ecce2c3936f2039a5ab8b496ee"
+      "Hash": "f881b49eb1e5060f935a75b09c3fc6cd"
     },
     "cpp11": {
       "Package": "cpp11",
@@ -547,6 +547,17 @@
         "R"
       ],
       "Hash": "d91263322a58af798f6cf3b13fd56dde"
+    },
+    "dashboardthemes": {
+      "Package": "dashboardthemes",
+      "Version": "1.1.6",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Requirements": [
+        "R",
+        "htmltools"
+      ],
+      "Hash": "4e33f708d662629e64ebfd2e88f0037d"
     },
     "data.table": {
       "Package": "data.table",
@@ -806,6 +817,20 @@
         "utils"
       ],
       "Hash": "550170303dbb19d07b2bcc288068e7dc"
+    },
+    "fresh": {
+      "Package": "fresh",
+      "Version": "0.2.1",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Requirements": [
+        "bslib",
+        "htmltools",
+        "rstudioapi",
+        "sass",
+        "shiny"
+      ],
+      "Hash": "7bdb5c90d4fe3cb14dcefbe837ce01da"
     },
     "fs": {
       "Package": "fs",
