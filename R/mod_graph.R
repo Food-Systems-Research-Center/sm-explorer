@@ -7,7 +7,13 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
+#' @import plotly
+#' @import dplyr
+#' @import tidyr
+#' @import purrr
+#' @import stringr
 source('R/filter_metrics.R')
+source('R/data_pipeline_functions.R')
 mod_graph_ui <- function(id) {
   ns <- NS(id)
   # tagList -----
@@ -136,7 +142,37 @@ mod_graph_server <- function(id){
     load('data/counties_2021.rda')
     load('data/counties_2024.rda')
     
-    # Filter Dataset -----
+    # Filter Dataset X -----
+    observeEvent(input$dimension_x, {
+      filtered <- dplyr::filter(dat, dimension == input$dimension_x)
+      updateSelectInput(session, "index_x", choices = unique(filtered$index))
+    })
+    
+    observeEvent(input$index_x, {
+      filtered <- dplyr::filter(dat, index == input$index_x)
+      updateSelectInput(session, "indicator_x", choices = unique(filtered$indicator))
+    })
+    
+    observeEvent(input$indicator_x, {
+      filtered <- dplyr::filter(dat, indicator == input$indicator_x)
+      updateSelectInput(session, "metric_x", choices = unique(filtered$variable_name))
+    })
+    
+    observeEvent(input$metric_x, {
+      filtered <- dplyr::filter(dat, variable_name == input$metric_x)
+      updateSelectInput(
+        session, 
+        "year_x", 
+        choices = sort(unique(filtered$year), decreasing = TRUE)
+      )
+    })
+    
+    observeEvent(input$year_x, {
+      filtered <- dplyr::filter(dat, variable_name == input$metric_x)
+    })
+    
+    
+    # Filter Dataset Y -----
     observeEvent(input$dimension_y, {
       filtered <- dplyr::filter(dat, dimension == input$dimension_y)
       updateSelectInput(session, "index_y", choices = unique(filtered$index))
@@ -168,7 +204,29 @@ mod_graph_server <- function(id){
     # Show graph -----
     observeEvent(input$show_graph, {
       output$graph <- renderPlotly({
-        # browser()
+        browser()
+        
+        ## Filter to variables -----
+        dat <- dat %>% 
+          filter(variable_name %in% c(input$metric_x, input$metric_y)) %>% 
+          get_latest_year() %>% 
+          unique() %>%
+          pivot_wider(
+            values_from = value,
+            names_from = variable_name
+          )  
+        # [] we are here. latest year is not unique. try filtering to unique
+        
+        
+        ## Make plot -----
+        dat %>% 
+          ggplot(aes(
+            x = filter(dat, variable_name == input$metric_x)$value, 
+            y = filter(dat, variable_name == input$metric_y)$value
+          )) +
+          geom_point()
+        
+        
         plot <- dat %>% 
           filter(
             variable_name == input$metric_y,
