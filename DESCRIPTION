@@ -21,6 +21,7 @@ Imports:
     mapview,
     pkgload,
     plotly,
+    reactable,
     sf,
     shinipsum,
     shiny,
