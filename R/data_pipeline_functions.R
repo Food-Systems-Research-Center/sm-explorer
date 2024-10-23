@@ -13,18 +13,29 @@ pacman::p_load(
 # Convenience function to filter so that each variable_name only has latest year
 get_latest_year <- function(df, var_col = 'variable_name', year_col = 'year'){
   
+  # Make sure year column is numeric
   df <- mutate(df, {{ year_col }} := as.numeric(.data[[year_col]]))
+  
+  # Get unique vector of variables from variable_name column
   vars <- unique(df[[var_col]])
   
+  # Get new df with only the latest year of each variable
+  # Map over each variable_name
   filtered_df <- map(vars, \(var) {
+    
+    # Get all unique years
     unique_years <- df %>%
       filter(.data[[var_col]] == var) %>%
       pull({{ year_col }}) %>% 
       unique()
+    
+    # Filter to the lastest unique year for each variable
     out <- df %>% 
       filter(.data[[var_col]] == var, .data[[year_col]] == max(unique_years))
     return(out)
   }) %>% 
+    
+    # Put each variable back together
     bind_rows()
   
   return(filtered_df)
@@ -34,13 +45,15 @@ get_latest_year <- function(df, var_col = 'variable_name', year_col = 'year'){
 make_wider <- function(df, 
                        var_col = 'variable_name', 
                        year_col = 'year', 
-                       val_col = 'value') {
+                       val_col = 'value',
+                       id_col = 'fips') {
   out <- df %>% 
     mutate(
-      {{ var_col }} := paste0(.data[[var_col]], '_', .data[[year_col]]),
-      .keep = 'unused'
+      {{ var_col }} := paste0(.data[[var_col]], '_', .data[[year_col]])
+      # .keep = 'unused'
     ) %>% 
     pivot_wider(
+      # id_cols = {{ id_col }},
       names_from = {{ var_col }},
       values_from = {{ val_col }}
     )

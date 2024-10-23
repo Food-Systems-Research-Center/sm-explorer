@@ -139,8 +139,9 @@ mod_graph_server <- function(id){
     
     # Prep -----
     load('data/dat.rda')
-    load('data/counties_2021.rda')
-    load('data/counties_2024.rda')
+    load('data/aggregated_meta.rda')
+    # load('data/counties_2021.rda')
+    # load('data/counties_2024.rda')
     
     # Filter Dataset X -----
     observeEvent(input$dimension_x, {
@@ -201,48 +202,55 @@ mod_graph_server <- function(id){
       filtered <- dplyr::filter(dat, variable_name == input$metric_y)
     })
     
-    # Show graph -----
+    # Obs input$show_graph -----
     observeEvent(input$show_graph, {
       output$graph <- renderPlotly({
+        
         browser()
+        load('data/dat.rda')
+        # dat <- dat %>% 
+        #   filter(
+        #     variable_name %in% c('groc', 'n_housing_units')) %>% 
+        #   get_latest_year() %>% 
+        #   mutate(
+        #     variable_name = paste0(variable_name, '_', year),
+        #     .keep = 'unused'
+        #   ) %>% 
+        #   pivot_wider(
+        #     id_cols = c('fips', 'county_name', 'state_name'),
+        #     names_from = 'variable_name',
+        #     values_from = 'value'
+        #   )
+        # get_str(dat)
+        # 
         
         ## Filter to variables -----
         dat <- dat %>% 
+          unique() %>% 
           filter(variable_name %in% c(input$metric_x, input$metric_y)) %>% 
           get_latest_year() %>% 
-          unique() %>%
-          pivot_wider(
-            values_from = value,
-            names_from = variable_name
-          )  
-        # [] we are here. latest year is not unique. try filtering to unique
-        
-        
-        ## Make plot -----
-        dat %>% 
-          ggplot(aes(
-            x = filter(dat, variable_name == input$metric_x)$value, 
-            y = filter(dat, variable_name == input$metric_y)$value
-          )) +
-          geom_point()
-        
-        
-        plot <- dat %>% 
-          filter(
-            variable_name == input$metric_y,
-            year == input$year_y
+          mutate(
+            variable_name = paste0(variable_name, '_', year),
+            .keep = 'unused'
           ) %>% 
-          ggplot(aes(x = value)) +
-          geom_histogram(
-            fill = 'grey',
-            color = 'black'
-          ) + 
+          pivot_wider(
+            id_cols = c('fips', 'county_name', 'state_name'),
+            names_from = 'variable_name',
+            values_from = 'value'
+          )
+        
+        # Plotly -----
+        plot <- dat %>% 
+          ggplot(aes(
+            x = !!sym(input$metric_x), 
+            y = !!sym(input$metric_y)
+          )) +
+          geom_point() +
           theme_classic()
         ggplotly(plot)
-        
+
       })
     })
-    
   })
 }
     
