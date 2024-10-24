@@ -132,5 +132,3 @@ my_theme <- shinyDashboardThemeDIY(
   ,tableBorderTopSize = 1
   ,tableBorderRowSize = 1
 )
-
-cat('\nsourced my_theme.R\n')
