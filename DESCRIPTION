@@ -6,6 +6,7 @@ Authors@R:
 Description: This is the description.
 License: GPL (>= 3)
 Imports: 
+    broom,
     bslib,
     collapsibleTree,
     config,
@@ -27,6 +28,7 @@ Imports:
     shiny,
     shinydashboard,
     shinyWidgets,
+    snakecase,
     spelling,
     tidyr
 Suggests: 

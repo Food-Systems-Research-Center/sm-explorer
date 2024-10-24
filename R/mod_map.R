@@ -57,24 +57,28 @@ mod_map_ui <- function(id) {
         ns("index"), 
         "Select Index:",
         choices = NULL,
+        selected = NULL,
         width = '100%'
       ),
       selectInput(
         ns("indicator"), 
         "Select Indicator:",
         choices = NULL,
+        selected = NULL,
         width = '100%'
       ),
       selectInput(
         ns("metric"), 
         "Select Metric:",
         choices = NULL,
+        selected = NULL,
         width = '100%'
       ),
       selectInput(
         ns("year"), 
         "Select Year:",
         choices = NULL,
+        selected = NULL,
         width = '100%'
       ),
       
@@ -94,19 +98,6 @@ mod_map_ui <- function(id) {
         "color: white !important; ",
         "} "
       )))
-      # tags$style(HTML(paste0(
-      #   "#", ns("update_map"), " { ",
-      #   "background-color: #154734 !important; ", # Button background color
-      #   "color: white !important; ",              # Text color
-      #   "width: 200px !important; ",              # Set button width
-      #   "} ",
-      #   
-      #   "#", ns("button_container"), " { ",
-      #   "display: flex; ",                        # Flexbox layout for centering
-      #   "justify-content: center; ",              # Center the button
-      #   "align-items: center; ",              # Center the button
-      #   "}"
-      # )))
     )
   )
 }
