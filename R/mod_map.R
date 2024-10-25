@@ -18,92 +18,126 @@
 mod_map_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    tags$style(HTML(
-      ".centered-button {
-        display: flex;
-        justify-content: center; /* Center horizontally */
-        width: 50%; /* Full width for the container */
-      }
-      .custom-action-button {
-        width: 200px; /* Set the desired width */
-      }"
-    )),
-    withSpinner(
-      type = 6,
-      color = '#154734',
-      caption = HTML('Loading Map...'),
-      leafletOutput(ns('map_plot'), height = '80vh', width = '100%')
-    ),
-    absolutePanel(
-      id = "controls",
-      class = "panel panel-default",
-      fixed = TRUE,
-      draggable = TRUE,
-      top = 150,
-      left = "auto",
-      right = 20,
-      bottom = "auto",
-      width = 300,
-      height = "auto",
+    # tags$style(HTML(
+    #   ".centered-button {
+    #     display: flex;
+    #     justify-content: center;
+    #     width: 50%;
+    #   }
+    #   .custom-action-button {
+    #     width: 200px;
+    #   }"
+    # )),
+    
+    div(
+      id = 'map_container',
       
-      h2('Select Metrics', style = 'text-align: center; font-weight: bold;'),
-      style = "z-index: 5001; background-color: rgba(255,255,255,0.8); 
-        padding: 15px; border-radius: 8px; max-width: 300; 
-        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);",
-
-      # Filter buttons -----
-      selectInput(
-        ns("dimension"), 
-        "Select Dimension:",
-        choices = unique(dat$dimension),
-        selected = NULL,
-        width = '100%'
-      ),
-      selectInput(
-        ns("index"), 
-        "Select Index:",
-        choices = NULL,
-        selected = NULL,
-        width = '100%'
-      ),
-      selectInput(
-        ns("indicator"), 
-        "Select Indicator:",
-        choices = NULL,
-        selected = NULL,
-        width = '100%'
-      ),
-      selectInput(
-        ns("metric"), 
-        "Select Metric:",
-        choices = NULL,
-        selected = NULL,
-        width = '100%'
-      ),
-      selectInput(
-        ns("year"), 
-        "Select Year:",
-        choices = NULL,
-        selected = NULL,
-        width = '100%'
+      # Leaflet output -----
+      withSpinner(
+        type = 6,
+        color = '#154734',
+        caption = HTML('Loading Map...'),
+        leafletOutput(ns('map_plot'), height = '90vh', width = '100%')
       ),
       
-      # Action button
-      actionBttn(
-        ns('update_map'),
-        'Update Map',
-        block = TRUE,
-        style = 'jelly',
-        color = 'primary',
-        icon = icon('arrows-rotate')
-      ),
+      # Absolute Panel -----
+      absolutePanel(
+        id = "controls",
+        class = "panel panel-default",
+        fixed = TRUE,
+        draggable = TRUE,
+        top = 150,
+        left = "auto",
+        right = 20,
+        bottom = "auto",
+        width = 300,
+        height = "auto",
+        
+        h2('Select Metrics', style = 'text-align: center; font-weight: bold;'),
+        style = "z-index: 5001; background-color: rgba(255,255,255,0.8); 
+          padding: 15px; border-radius: 8px; max-width: 300; 
+          box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);",
+  
+        # Filter buttons -----
+        selectInput(
+          ns("dimension"), 
+          "Select Dimension:",
+          choices = unique(dat$dimension),
+          selected = NULL,
+          width = '100%'
+        ),
+        selectInput(
+          ns("index"), 
+          "Select Index:",
+          choices = NULL,
+          selected = NULL,
+          width = '100%'
+        ),
+        selectInput(
+          ns("indicator"), 
+          "Select Indicator:",
+          choices = NULL,
+          selected = NULL,
+          width = '100%'
+        ),
+        selectInput(
+          ns("metric"), 
+          "Select Metric:",
+          choices = NULL,
+          selected = NULL,
+          width = '100%'
+        ),
+        selectInput(
+          ns("year"), 
+          "Select Year:",
+          choices = NULL,
+          selected = NULL,
+          width = '100%'
+        ),
+        
+        # Update button -----
+        actionBttn(
+          ns('update_map'),
+          'Update Map',
+          block = TRUE,
+          style = 'jelly',
+          color = 'primary',
+          icon = icon('arrows-rotate')
+        ),
+        
+        tags$style(HTML(paste0(
+          "#", ns("update_map"), " { ",
+          "background-color: #154734 !important; ",
+          "color: white !important; ",
+          "} "
+        ))),
+        
+        # Gap between buttons
+        HTML("<div style='height: 20px;'></div>"),
+        
+        # Fullscreen Button -----
+        actionBttn(
+          ns('full_screen'),
+          'Full Screen',
+          block = TRUE,
+          style = 'jelly',
+          color = 'primary',
+          icon = icon('expand'),
+          onclick = "openFullscreen(document.getElementById('map_container'))"
+        ),
+        
+        
+        tags$style(HTML(paste0(
+          "#", ns("full_screen"), " { ",
+          "background-color: #154734 !important; ",
+          "color: white !important; ",
+          "} "
+        ))),
       
-      tags$style(HTML(paste0(
-        "#", ns("update_map"), " { ",
-        "background-color: #154734 !important; ",
-        "color: white !important; ",
-        "} "
-      )))
+    ), # end div
+    
+    tags$scrip(HTML(js))
+      
     )
   )
 }
@@ -120,6 +154,7 @@ mod_map_server <- function(id){
       load('data/dat.rda')
       load('data/counties_2021.rda')
       load('data/counties_2024.rda')
+      load('data/js.rda')
       
       # Initial filter with dat
       initial_dat <- dat %>%
@@ -211,8 +246,8 @@ mod_map_server <- function(id){
           overlayGroups = c('Counties'),
           options = layersControlOptions(collapsed = TRUE),
           position = 'topleft'
-        ) %>% 
-        addFullscreenControl()
+        )
+        # addFullscreenControl()
     })
     
     
