@@ -26,6 +26,7 @@ Imports:
     sf,
     shinipsum,
     shiny,
+    shinycssloaders,
     shinydashboard,
     shinyWidgets,
     snakecase,

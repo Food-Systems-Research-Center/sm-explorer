@@ -14,20 +14,26 @@
 #' @import leaflet.extras
 #' @import shinyWidgets
 #' @import dplyr
+#' @import shinycssloaders
 mod_map_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    tags$style(HTML("
-        .centered-button {
-          display: flex;
-          justify-content: center; /* Center horizontally */
-          width: 50%; /* Full width for the container */
-        }
-        .custom-action-button {
-          width: 200px; /* Set the desired width */
-        }
-      ")),
-    leafletOutput(ns('map_plot'), height = '80vh', width = '100%'),
+    tags$style(HTML(
+      ".centered-button {
+        display: flex;
+        justify-content: center; /* Center horizontally */
+        width: 50%; /* Full width for the container */
+      }
+      .custom-action-button {
+        width: 200px; /* Set the desired width */
+      }"
+    )),
+    withSpinner(
+      type = 6,
+      color = '#154734',
+      caption = HTML('Loading Map...'),
+      leafletOutput(ns('map_plot'), height = '80vh', width = '100%')
+    ),
     absolutePanel(
       id = "controls",
       class = "panel panel-default",
@@ -134,6 +140,14 @@ mod_map_server <- function(id){
       #   initial_dat$county_name
       # )
       
+      
+      # centroids <- st_centroid(initial_dat)
+      # centroid_coords <- data.frame(
+      #   county_name = centroids$county_name,
+      #   lng = st_coordinates(centroids)[, 1],
+      #   lat = st_coordinates(centroids)[, 2]
+      # )
+      
       # Initial Map -----
       leaflet(initial_dat) %>% 
         addProviderTiles(
@@ -174,6 +188,18 @@ mod_map_server <- function(id){
           label = ~county_name,
           group = 'Counties'
         ) %>% 
+        # addLabelOnlyMarkers(
+        #   data = centroid_coords,
+        #   label = ~county_name,
+        #   lng = ~lng,
+        #   lat = ~lat,
+        #   labelOptions = labelOptions(
+        #     noHide = TRUE, 
+        #     direction = "auto", 
+        #     textsize = "10px",
+        #     textOnly = TRUE
+        #   )
+        # ) %>%
         addLayersControl(
           baseGroups = c(
             'Stadia AlidadeSmooth',

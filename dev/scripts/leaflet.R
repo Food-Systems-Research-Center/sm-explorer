@@ -12,13 +12,28 @@ pacman::p_load(
   leaflet.extras
 )
 
-load('data/map_dat.rda')
-dat <- map_dat
-dat <- readRDS('dev/ne_economics.RDS') %>% 
-  pivot_wider(names_from = 'variable_name')  
-counties <- readRDS('dev/counties.RDS')
+# dat <- readRDS('dev/data/sm_data.rds')
+# names(dat)
+# 
+# dat <- map_dat
+# dat <- readRDS('dev/ne_economics.RDS') %>% 
+#   pivot_wider(names_from = 'variable_name')  
+# counties <- readRDS('dev/counties.RDS')
+# 
+# map_dat <- inner_join(counties, dat, by = 'fips')
 
-map_dat <- inner_join(counties, dat, by = 'fips')
+# Load export from sm-data repo. List of all datasets and keys
+sm_data <- readRDS('dev/data/sm_data.rds')
+names(sm_data)
+
+# Pull out metrics
+metrics <- sm_data$metrics
+
+# Pull out county spatial data
+counties <- sm_data[c('ne_counties_2021', 'ne_counties_2024')]
+
+map_dat <- inner_join(counties_2024, metrics, by = 'fips')
+get_str(map_dat)
 
 
 # Leaflet Map -------------------------------------------------------------

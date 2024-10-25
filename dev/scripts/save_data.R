@@ -9,6 +9,19 @@ pacman::p_load(
   stringr
 )
 
+# Load export from sm-data repo. List of all datasets and keys
+sm_data <- readRDS('dev/data/sm_data.rds')
+names(sm_data)
+
+# Pull out metrics
+metrics <- sm_data$metrics
+
+# Pull out county spatial data
+counties <- sm_data[c('ne_counties_2021', 'ne_counties_2024')]
+
+# Join data to counties to get 
+
+
 dat <- readRDS('dev/data/aggregated_data.rds') %>% 
   mutate(
     across(c('county_name', 'state_name'), ~ str_to_title(.)),
