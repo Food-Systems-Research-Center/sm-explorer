@@ -1,10 +1,10 @@
 name: SMexplorer
-title: SMexplorer
+title: sm-explorer
 username: chris-donovan
 account: chris-donovan
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 12783540
-bundleId: 9266675
+bundleId: 9335830
 url: https://chris-donovan.shinyapps.io/SMexplorer/
 version: 1

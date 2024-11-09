@@ -59,18 +59,18 @@ app_ui <- function(request) {
           ),
           
           ## tree_tab -----
-          menuItem("Metrics Framework", tabName = "tree_tab", icon = icon("sitemap")),
-          conditionalPanel(
-            condition = "input.tabs == 'tree_tab'",
-            div(
-              style = "text-align: center; width: 100%; white-space: normal; 
-                overflow-wrap: break-word; padding: 10px",
-              HTML(
-                "<p>I thought this might be fun, but I don't think it's really
-                worth keeping. Click on each grouping to see subgroups.</p>"
-              )
-            )
-          ),
+          # menuItem("Metrics Framework", tabName = "tree_tab", icon = icon("sitemap")),
+          # conditionalPanel(
+          #   condition = "input.tabs == 'tree_tab'",
+          #   div(
+          #     style = "text-align: center; width: 100%; white-space: normal;
+          #       overflow-wrap: break-word; padding: 10px",
+          #     HTML(
+          #       "<p>I thought this might be fun, but I don't think it's really
+          #       worth keeping. Click on each grouping to see subgroups.</p>"
+          #     )
+          #   )
+          # ),
           
           ## table_tab -----
           menuItem("Data Explorer", tabName = "table_tab", icon = icon("table")),
