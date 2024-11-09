@@ -27,9 +27,8 @@ app_ui <- function(request) {
               style = "text-align: center; width: 100%; white-space: normal; 
                 overflow-wrap: break-word; padding: 10px",
               HTML(
-                "<p>Use the input panel on the right to filter by dimension, 
-                index, indicator, and display a sustainability metric on the 
-                map.</p>"
+                "<p>Use the input panel on the right to choose a metric by either
+                searching or using the dropdown.</p>"
               )
             )
           ),

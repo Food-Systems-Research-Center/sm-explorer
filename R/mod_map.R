@@ -57,39 +57,20 @@ mod_map_ui <- function(id) {
         style = "z-index: 5001; background-color: rgba(255,255,255,0.8); 
           padding: 15px; border-radius: 8px; max-width: 300; 
           box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);",
-  
-        # Filter buttons -----
-        selectInput(
-          ns("dimension"), 
-          "Select Dimension:",
-          choices = unique(dat$dimension),
-          selected = NULL,
-          width = '100%'
-        ),
-        selectInput(
-          ns("index"), 
-          "Select Index:",
+        
+        # Search metric -----
+        selectizeInput(
+          inputId = ns('metric'),
+          label = 'Select Metric:',
           choices = NULL,
           selected = NULL,
-          width = '100%'
+          width = '100%',
+          multiple = FALSE
         ),
+        
         selectInput(
-          ns("indicator"), 
-          "Select Indicator:",
-          choices = NULL,
-          selected = NULL,
-          width = '100%'
-        ),
-        selectInput(
-          ns("metric"), 
-          "Select Metric:",
-          choices = NULL,
-          selected = NULL,
-          width = '100%'
-        ),
-        selectInput(
-          ns("year"), 
-          "Select Year:",
+          inputId = ns("year"),
+          label = "Select Year:",
           choices = NULL,
           selected = NULL,
           width = '100%'
@@ -126,7 +107,6 @@ mod_map_ui <- function(id) {
           onclick = "openFullscreen(document.getElementById('map_container'))"
         ),
         
-        
         tags$style(HTML(paste0(
           "#", ns("full_screen"), " { ",
           "background-color: #154734 !important; ",
@@ -136,6 +116,7 @@ mod_map_ui <- function(id) {
       
     ), # end div
     
+    # JS function for full screen button
     tags$scrip(HTML(js))
       
     )
@@ -155,14 +136,25 @@ mod_map_server <- function(id){
       load('data/counties_2021.rda')
       load('data/counties_2024.rda')
       load('data/js.rda')
+      load('data/sm_data.rda')
+      source('R/filter_fips.R')
       
-      # Initial filter with dat
-      initial_dat <- dat %>%
-        dplyr::filter(variable_name == 'local_sales_pct')
-
-      # Make spatial object with initial_dat
-      initial_dat <- counties_2021 %>%
-        dplyr::inner_join(initial_dat, by = 'fips')
+      # Narrow down list of potential metric options
+      # Note this is a cluster and I need to fix it. 
+      metric_options <- sm_data$metrics %>%
+          inner_join(sm_data$metadata, by = 'variable_name') %>% 
+          pull(metric) %>% 
+          unique()
+      
+      updateSelectInput(
+        session, 
+        'metric', 
+        choices = metric_options
+      )
+      
+      # Baseline data to make map
+      init_data <- sm_data$ne_counties_2024 %>% 
+        left_join(sm_data$fips_key, by = 'fips')
       
       # Prep popup and palette
       custom_popup <- ~paste0(
@@ -184,7 +176,7 @@ mod_map_server <- function(id){
       # )
       
       # Initial Map -----
-      leaflet(initial_dat) %>% 
+      leaflet(init_data) %>% 
         addProviderTiles(
           providers$Stadia.AlidadeSmooth, 
           group = 'Stadia AlidadeSmooth'
@@ -251,65 +243,73 @@ mod_map_server <- function(id){
     })
     
     
-    # Filter Dataset -----
-    observeEvent(input$dimension, {
-      filtered <- dplyr::filter(dat, dimension == input$dimension)
-      updateSelectInput(session, "index", choices = unique(filtered$index))
-    })
-    
-    observeEvent(input$index, {
-      filtered <- dplyr::filter(dat, index == input$index)
-      updateSelectInput(session, "indicator", choices = unique(filtered$indicator))
-    })
-    
-    observeEvent(input$indicator, {
-      filtered <- dplyr::filter(dat, indicator == input$indicator)
-      updateSelectInput(session, "metric", choices = unique(filtered$variable_name))
-    })
-    
+    # Update year field -----
     observeEvent(input$metric, {
-      filtered <- dplyr::filter(dat, variable_name == input$metric)
+      req(input$metric)
+      year_options <- sm_data$metadata %>%
+        dplyr::filter(metric == input$metric) %>% 
+        pull(year) %>% 
+        str_split_1(', ') %>% 
+        sort(decreasing = TRUE)
+
       updateSelectInput(
-        session, 
-        "year", 
-        choices = sort(unique(filtered$year), decreasing = TRUE)
+        session,
+        "year",
+        choices = year_options
       )
     })
     
-    observeEvent(input$year, {
-      filtered <- dplyr::filter(dat, variable_name == input$metric)
-    })
     
-    
-    # Update Map -----
+    # Update Map (Prep) -----
     observeEvent(input$update_map, {
-      req(input$dimension, input$index, input$indicator, input$metric, input$year)
+      req(input$metric, input$year)
+      
+      # Get corresponding variable_name
+      chosen_variable <- sm_data$metadata %>% 
+        filter(metric == input$metric) %>% 
+        pull(variable_name)
       
       # Filter dataset based on user choices
-      updated_dat <- dat %>% 
+      # Also join to metadata to get axis names and metric names
+      updated_dat <- sm_data$metrics %>% 
         dplyr::filter(
-          dimension == input$dimension,
-          index == input$index,
-          indicator == input$indicator,
-          variable_name == input$metric,
+          variable_name == chosen_variable,
           year == input$year
-        )
+        ) %>% 
+        mutate(value = as.numeric(value)) %>% 
+        left_join(sm_data$metadata, by = 'variable_name')
       
-      # Join with counties
-      updated_dat <- counties_2021 %>% 
-        dplyr::inner_join(updated_dat, by = 'fips')
+      # Get resolution of metric
+      res <- sm_data$metadata %>% 
+        filter(variable_name == chosen_variable) %>% 
+        pull(resolution)
+      
+      # Join with counties or states depending on resolution
+      # Also choose county map depending on year (CT Discrancies)
+      if (res == 'county') {
+        if (input$year >= 2023) {
+          updated_dat <- updated_dat %>%
+            dplyr::right_join(sm_data$ne_counties_2024, by = 'fips')
+        } else if (input$year <= 2022) {
+          updated_dat <- updated_dat %>%
+            dplyr::right_join(sm_data$ne_counties_2021, by = 'fips')
+        }
+      } else if (res == 'state') {
+        updated_dat <- updated_dat %>% 
+          dplyr::right_join(sm_data$ne_states_2024, by = 'fips')
+      }
+      
+      # Add county name
+      updated_dat <- updated_dat %>% 
+        left_join(sm_data$fips_key, by = 'fips')
       
       # Popups and palette
       custom_popup <- function(county_name, 
-                               # aland, 
-                               # awater, 
                                variable_name,
                                value) {
         paste0(
           "<div style='text-align: center;'>",
           "<b>", county_name, "</b><br>",
-          # "<strong>Land Area:</strong> ", round(aland / 1000000, 2), " sq km<br>",
-          # "<strong>Water Area:</strong> ", round(awater / 100000, 2), " sq km<br>",
           "<strong>", variable_name, ":</strong> ", round(value, 2)
         )
       }
@@ -318,7 +318,12 @@ mod_map_server <- function(id){
         domain = updated_dat$value,
         reverse = FALSE
       )
+      
+      # Make sure updated_dat is an sf object after joins
+      updated_dat <- st_as_sf(updated_dat)
 
+      
+      # LeafletProxy -----
       leafletProxy(
         ns("map_plot"), 
         data = updated_dat
@@ -346,12 +351,12 @@ mod_map_server <- function(id){
           "bottomleft",
           pal = pal,
           values = ~value,
-          title = ~variable_name[1],
+          title = ~axis_name[1],
           labFormat = labelFormat(prefix = " "),
           # labFormat = labelFormat(prefix = "$"),
           opacity = 1
-        ) %>%
-        addFullscreenControl()
+        )
+        # addFullscreenControl()
     })
     
   })

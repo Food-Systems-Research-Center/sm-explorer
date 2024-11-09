@@ -54,7 +54,7 @@ mod_graph_ui <- function(id) {
           selectizeInput(
             inputId = ns('search_x'),
             label = 'Select Metric for X-Axis:',
-            choices = dat$metric,
+            choices = NULL,
             selected = NULL,
             width = '100%',
             multiple = FALSE
@@ -90,7 +90,7 @@ mod_graph_ui <- function(id) {
           selectizeInput(
             inputId = ns('search_y'),
             label = 'Select Metric for Y-Axis:',
-            choices = dat$metric,
+            choices = NULL,
             selected = NULL,
             width = '100%',
             multiple = FALSE
@@ -188,19 +188,80 @@ mod_graph_server <- function(id){
   moduleServer(id, function(input, output, session){
     ns <- session$ns
     
+    # Load data -----
+    load('data/dat.rda')
+    load('data/aggregated_meta.rda')
+    load('data/sm_data.rda')
+    
+    
+    # Metric options -----
+    metric_options <- sm_data$metrics %>%
+      inner_join(sm_data$metadata, by = 'variable_name') %>% 
+      pull(metric) %>% 
+      unique()
+    
+    # Update search fields
+    updateSelectInput(
+      session, 
+      'search_x', 
+      choices = metric_options,
+      selected = character(0)
+    )
+    updateSelectInput(
+      session, 
+      'search_y', 
+      choices = metric_options,
+      selected = character(0)
+    )
+    
     # Filter Data -----
     rval_data <- reactive({
       req(input$search_x, input$search_y)
       
-      # Load data
-      load('data/dat.rda')
-      load('data/aggregated_meta.rda')
+      # Get resolution of inputs 
+      res_x <- sm_data$metadata %>% 
+        filter(metric == input$search_x) %>% 
+        pull(resolution)
+      res_y <- sm_data$metadata %>% 
+        filter(metric == input$search_y) %>% 
+        pull(resolution)
       
-      dat <- filter_fips(dat, scope = 'counties')
+      # If they are not the same, throw an error
+      # Otherwise, filter fips by scope/resolution (inconsistent)
+      if (res_x != res_y) {
+        stop(
+          'The metrics you have selected are at different spatial scales.',
+          'Check the resolution field in the Metric Details box.'
+        )
+      } else if (res_x == 'county' & res_y == 'county') {
+        dat <- filter_fips(sm_data$metrics, scope = 'counties')
+      } else if (res_x == 'state' & res_y == 'state') {
+        dat <- filter_fips(sm_data$metrics, scope = 'states')
+      }
       
       # Filter to selected variables
-      dat <- dat %>%
-        filter(metric %in% c(input$search_x, input$search_y)) 
+      # have to join with metadata to search by metric
+      # Also join to fips to get county name
+      dat <- sm_data$metadata %>% 
+        select(
+          variable_name,
+          metric,
+          dimension,
+          index,
+          indicator,
+          axis_name,
+          units,
+          all_years = year,
+          definition,
+          updates,
+          source,
+          url,
+          citation
+        ) %>% 
+        right_join(dat, by = 'variable_name') %>% 
+        filter(metric %in% c(input$search_x, input$search_y)) %>% 
+        left_join(sm_data$fips_key, by = 'fips') %>% 
+        filter(fips != '00') # removing US totals for now
       
       # Get the variable names
       xvar <- unique(dat$variable_name[dat$metric == input$search_x])
@@ -213,12 +274,13 @@ mod_graph_server <- function(id){
           variable_name = paste0(variable_name, '_', year),
           .keep = 'unused'
         ) %>%
+        mutate(value = as.numeric(value)) %>% 
         pivot_wider(
           id_cols = c('fips', 'county_name', 'state_name'),
           names_from = 'variable_name',
           values_from = 'value'
         )
-      
+
       # Reassign x and y variables after pasting year
       xvar <- str_subset(names(dat), xvar)
       yvar <- str_subset(names(dat), yvar)
@@ -265,8 +327,9 @@ mod_graph_server <- function(id){
             )
           )
       } else {
+        
         # Get the filtered data and variables from the reactive function
-        dat <- rval_data()$data
+        plot_dat <- rval_data()$data
         xvar <- rval_data()$xvar
         yvar <- rval_data()$yvar
         
@@ -275,7 +338,7 @@ mod_graph_server <- function(id){
         y_label <- snakecase::to_title_case(yvar)
         
         # Create the ggplot
-        plot <- dat %>%
+        plot <- plot_dat %>%
           ggplot(aes(
             x = !!sym(xvar), 
             y = !!sym(yvar),
@@ -416,7 +479,7 @@ mod_graph_server <- function(id){
         
         # Add x info if selected
         if (input$search_x != '') {
-          meta_x <- aggregated_meta %>% 
+          meta_x <- sm_data$metadata %>% 
             filter(metric == input$search_x)
           html_output <- paste0(
             html_output, 
@@ -425,6 +488,7 @@ mod_graph_server <- function(id){
             '<p><b>Dimension:</b> ', meta_x$dimension, '</p>',
             '<p><b>Index:</b> ', meta_x$index, '</p>',
             '<p><b>Indicator:</b> ', meta_x$indicator, '</p>',
+            '<p><b>Resolution:</b> ', meta_x$resolution, '</p>',
             '<p><b>Updates:</b> ', meta_x$updates, '</p>',
             '<p><b>Source: </b><a href="', meta_x$url, '">', meta_x$source, '</a></p>',
             '<p><b>Citation:</b> ', meta_x$citation, '</p>'
@@ -433,7 +497,7 @@ mod_graph_server <- function(id){
         
         # Add y info if selected
         if (input$search_y != '') {
-          meta_y <- aggregated_meta %>% 
+          meta_y <- sm_data$metadata %>% 
             filter(metric == input$search_y)
           html_output <- paste0(
             html_output,
@@ -443,6 +507,7 @@ mod_graph_server <- function(id){
             '<p><b>Dimension:</b> ', meta_y$dimension, '</p>',
             '<p><b>Index:</b> ', meta_y$index, '</p>',
             '<p><b>Indicator:</b> ', meta_y$indicator, '</p>',
+            '<p><b>Resolution:</b> ', meta_y$resolution, '</p>',
             '<p><b>Updates:</b> ', meta_y$updates, '</p>',
             '<p><b>Source: </b><a href="', meta_y$url, '">', meta_y$source, '</a></p>',
             '<p><b>Citation:</b> ', meta_y$citation, '</p>'

@@ -5,6 +5,6 @@ account: chris-donovan
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 12783540
-bundleId: 9335830
+bundleId: 9338659
 url: https://chris-donovan.shinyapps.io/SMexplorer/
 version: 1
