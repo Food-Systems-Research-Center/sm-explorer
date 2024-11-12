@@ -18,16 +18,6 @@
 mod_map_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    # tags$style(HTML(
-    #   ".centered-button {
-    #     display: flex;
-    #     justify-content: center;
-    #     width: 50%;
-    #   }
-    #   .custom-action-button {
-    #     width: 200px;
-    #   }"
-    # )),
     
     div(
       id = 'map_container',
@@ -46,11 +36,11 @@ mod_map_ui <- function(id) {
         class = "panel panel-default",
         fixed = TRUE,
         draggable = TRUE,
-        top = 150,
+        top = 70, # 5px within map
         left = "auto",
-        right = 20,
+        right = 20, # 5px within map
         bottom = "auto",
-        width = 300,
+        width = 400,
         height = "auto",
         
         h2('Select Metrics', style = 'text-align: center; font-weight: bold;'),
@@ -76,25 +66,30 @@ mod_map_ui <- function(id) {
           width = '100%'
         ),
         
-        # Update button -----
+        
+        # Metric Info Button -----
         actionBttn(
-          ns('update_map'),
-          'Update Map',
+          ns('show_metric_info'),
+          'Metric Info',
           block = TRUE,
           style = 'jelly',
           color = 'primary',
-          icon = icon('arrows-rotate')
+          icon = icon('info')
         ),
         
         tags$style(HTML(paste0(
-          "#", ns("update_map"), " { ",
+          "#", ns("show_metric_info"), " { ",
           "background-color: #154734 !important; ",
           "color: white !important; ",
           "} "
         ))),
+
+        # Metric Info 
+        uiOutput(ns('metric_info')),
         
         # Gap between buttons
-        HTML("<div style='height: 20px;'></div>"),
+        HTML("<div style='height: 10px;'></div>"),
+        
         
         # Fullscreen Button -----
         actionBttn(
@@ -113,6 +108,27 @@ mod_map_ui <- function(id) {
           "color: white !important; ",
           "} "
         ))),
+        
+        # Gap between buttons
+        HTML("<div style='height: 10px;'></div>"),
+        
+        
+        # Update Map Button -----
+        actionBttn(
+          ns('update_map'),
+          'Update Map',
+          block = TRUE,
+          style = 'jelly',
+          color = 'primary',
+          icon = icon('arrows-rotate')
+        ),
+        
+        tags$style(HTML(paste0(
+          "#", ns("update_map"), " { ",
+          "background-color: #154734 !important; ",
+          "color: white !important; ",
+          "} "
+        )))
       
     ), # end div
     
@@ -139,13 +155,19 @@ mod_map_server <- function(id){
       load('data/sm_data.rda')
       source('R/filter_fips.R')
       
-      # Narrow down list of potential metric options
-      # Note this is a cluster and I need to fix it. 
+      # Metric options -----
       metric_options <- sm_data$metrics %>%
           inner_join(sm_data$metadata, by = 'variable_name') %>% 
           pull(metric) %>% 
           unique()
       
+      # Reorder metrics, put NAICS last
+      metric_options <- c(
+        sort(metric_options[!grepl("NAICS", metric_options)]),
+        sort(metric_options[grepl("NAICS", metric_options)])
+      )
+      
+      # Update UI with metric options
       updateSelectInput(
         session, 
         'metric', 
@@ -257,6 +279,43 @@ mod_map_server <- function(id){
         "year",
         choices = year_options
       )
+    })
+    
+    
+    # Metric Info -----
+    # Show Metric Button -----
+    show_metric_info <- reactiveVal(FALSE)
+    observeEvent(input$show_metric_info, {
+      
+      show_metric_info(!show_metric_info())
+      
+      if (show_metric_info()) {
+        output$metric_info <- renderUI({
+          req(input$metric, input$year)
+          
+          meta <- sm_data$metadata %>% 
+            filter(metric == input$metric)
+          
+          HTML(
+            '<h4><b>Metric: </b>', input$metric, '</h4>',
+            '<p><b>Definition:</b> ', meta$definition, '<br>',
+            '<b>Dimension:</b> ', meta$dimension, '<br>',
+            '<b>Index:</b> ', meta$index, '<br>',
+            '<b>Indicator:</b> ', meta$indicator, '<br>',
+            '<b>Resolution:</b> ', meta$resolution, '<br>',
+            '<b>Updates:</b> ', meta$updates, '<br>',
+            '<b>Source: </b><a href="', meta$url, '">', meta$source, '</a><br>',
+            '<b>Citation:</b> ', meta$citation, '</p>'
+          )
+          
+        })
+      } else {
+        # If show_metric_info is FALSE, clear the output or do nothing
+        output$metric_info <- renderUI({
+          NULL  # This ensures nothing is shown when FALSE
+        })
+      }
+      
     })
     
     

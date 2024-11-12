@@ -142,16 +142,17 @@ mod_graph_ui <- function(id) {
             status = "primary"
           ),
           
-          tags$style(HTML(paste0(
-            "#", ns("loess"), " { ",
-            "background-color: #154734 !important; ",
-            "color: white !important; ",
-            "width: 50%; ",
-            "margin-left: auto; ",
-            "margin-right: auto; ",
-            "display: block; ",
-            "} "
-          ))),
+          # tags$style(HTML(paste0(
+          #   "#", ns("loess"), " { ",
+          #   "background-color: #154734 !important; ",
+          #   "color: white !important; ",
+          #   "width: 50%; ",
+          #   "margin-left: auto; ",
+          #   "margin-right: auto; ",
+          #   "display: block; ",
+          #   "} "
+          # ))),
+          
           
           ### cor checkbox -----
           awesomeCheckbox(
@@ -188,7 +189,7 @@ mod_graph_server <- function(id){
   moduleServer(id, function(input, output, session){
     ns <- session$ns
     
-    # Load data -----
+     # Load data -----
     load('data/dat.rda')
     load('data/aggregated_meta.rda')
     load('data/sm_data.rda')
@@ -198,8 +199,15 @@ mod_graph_server <- function(id){
     metric_options <- sm_data$metrics %>%
       inner_join(sm_data$metadata, by = 'variable_name') %>% 
       pull(metric) %>% 
-      unique()
+      unique() %>% 
+      sort()
     
+    # Reorder metrics, put NAICS last
+    metric_options <- c(
+      sort(metric_options[!grepl("NAICS", metric_options)]),
+      sort(metric_options[grepl("NAICS", metric_options)])
+    )
+      
     # Update search fields
     updateSelectInput(
       session, 
@@ -280,7 +288,18 @@ mod_graph_server <- function(id){
           names_from = 'variable_name',
           values_from = 'value'
         )
-
+      
+      # If there are lingering list columns, choose the second value This is the
+      # jenkiest thing I've ever seen. 
+      # NOTE: Have to get to source of problem - why are there some counties
+      # showing up with two values for NAICS vars in the same year? Something
+      # about the disclosures, but I haven't been able to fix it in sm-data yet.
+      dat <- dat %>%
+        mutate(across(where(~ is.list(.)), 
+                      ~ map(., ~ if(length(.x) > 1) .x[2] else .x), 
+                      .names = "{.col}")) %>% 
+        unnest(cols = where(~ is.list(.)))
+        
       # Reassign x and y variables after pasting year
       xvar <- str_subset(names(dat), xvar)
       yvar <- str_subset(names(dat), yvar)
@@ -327,7 +346,7 @@ mod_graph_server <- function(id){
             )
           )
       } else {
-        
+
         # Get the filtered data and variables from the reactive function
         plot_dat <- rval_data()$data
         xvar <- rval_data()$xvar
@@ -363,7 +382,7 @@ mod_graph_server <- function(id){
         if (input$loess == TRUE) {
           plot <- plot + geom_smooth(aes(group = 1))
         }
-        
+
         # Convert ggplot to plotly and return
         ggplotly(plot, tooltip = 'text') %>%
           layout(
@@ -483,7 +502,7 @@ mod_graph_server <- function(id){
             filter(metric == input$search_x)
           html_output <- paste0(
             html_output, 
-            '<h4>X-Axis: ', input$search_x, '</h3>',
+            '<h4>X-Axis: ', input$search_x, '</h4>',
             '<p><b>Definition:</b> ', meta_x$definition, '</p>',
             '<p><b>Dimension:</b> ', meta_x$dimension, '</p>',
             '<p><b>Index:</b> ', meta_x$index, '</p>',
@@ -502,7 +521,7 @@ mod_graph_server <- function(id){
           html_output <- paste0(
             html_output,
             '<br>',
-            '<h4>Y-Axis: ', input$search_y, '</h3>',
+            '<h4>Y-Axis: ', input$search_y, '</h4>',
             '<p><b>Definition:</b> ', meta_y$definition, '</p>',
             '<p><b>Dimension:</b> ', meta_y$dimension, '</p>',
             '<p><b>Index:</b> ', meta_y$index, '</p>',
