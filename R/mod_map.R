@@ -67,25 +67,22 @@ mod_map_ui <- function(id) {
         ),
         
         
-        # Metric Info Button -----
+        # Update Map Button -----
         actionBttn(
-          ns('show_metric_info'),
-          'Metric Info',
+          ns('update_map'),
+          'Update Map',
           block = TRUE,
           style = 'jelly',
           color = 'primary',
-          icon = icon('info')
+          icon = icon('arrows-rotate')
         ),
         
         tags$style(HTML(paste0(
-          "#", ns("show_metric_info"), " { ",
+          "#", ns("update_map"), " { ",
           "background-color: #154734 !important; ",
           "color: white !important; ",
           "} "
         ))),
-
-        # Metric Info 
-        uiOutput(ns('metric_info')),
         
         # Gap between buttons
         HTML("<div style='height: 10px;'></div>"),
@@ -113,22 +110,25 @@ mod_map_ui <- function(id) {
         HTML("<div style='height: 10px;'></div>"),
         
         
-        # Update Map Button -----
+        # Metric Info Button -----
         actionBttn(
-          ns('update_map'),
-          'Update Map',
+          ns('show_metric_info'),
+          'Metric Info',
           block = TRUE,
           style = 'jelly',
           color = 'primary',
-          icon = icon('arrows-rotate')
+          icon = icon('info')
         ),
         
         tags$style(HTML(paste0(
-          "#", ns("update_map"), " { ",
+          "#", ns("show_metric_info"), " { ",
           "background-color: #154734 !important; ",
           "color: white !important; ",
           "} "
-        )))
+        ))),
+
+        # Metric Info 
+        uiOutput(ns('metric_info'))
       
     ), # end div
     

@@ -28,13 +28,14 @@ app_ui <- function(request) {
                 overflow-wrap: break-word; padding: 10px",
               HTML(
                 "<p>Use the input panel on the right to choose a metric by either
-                searching or using the dropdown.</p>"
+                searching or using the dropdown. Push the 'Update Map' button to
+                view a metric.</p>"
               )
             )
           ),
           
           ## graph_tab -----
-          menuItem("Graph Explorer", tabName = "graph_tab", icon = icon("chart-simple")),
+          menuItem("Bivariate Graphs", tabName = "graph_tab", icon = icon("chart-simple")),
           conditionalPanel(
             condition = "input.tabs == 'graph_tab'",
             div(
@@ -72,7 +73,7 @@ app_ui <- function(request) {
           # ),
           
           ## table_tab -----
-          menuItem("Data Explorer", tabName = "table_tab", icon = icon("table")),
+          menuItem("Metadata Table", tabName = "table_tab", icon = icon("table")),
           conditionalPanel(
             condition = "input.tabs == 'table_tab'",
             div(
