@@ -67,6 +67,54 @@ mod_map_ui <- function(id) {
         ),
         
         
+        fluidRow(
+          column(
+            width = 6,
+            
+            # Metric Info Button -----
+            actionBttn(
+              ns('show_metric_info'),
+              'Metric Info',
+              style = 'jelly',
+              block = TRUE,
+              color = 'primary',
+              icon = icon('info')
+            ),
+        
+            tags$style(HTML(paste0(
+              "#", ns("show_metric_info"), " { ",
+              "background-color: #154734 !important; ",
+              "color: white !important; ",
+              "} "
+            )))
+          ),
+          column(
+            width = 6,
+            
+            # Full Sceen Button -----
+            actionBttn(
+              ns('full_screen'),
+              'Full Screen',
+              block = TRUE,
+              style = 'jelly',
+              color = 'primary',
+              icon = icon('expand'),
+              onclick = "openFullscreen(document.getElementById('map_container'))"
+            ),
+            
+            tags$style(HTML(paste0(
+              "#", ns("full_screen"), " { ",
+              "background-color: #154734 !important; ",
+              "color: white !important; ",
+              "} "
+            )))
+          )
+        ),
+        
+        # Gap between buttons
+        HTML("<div style='height: 10px;'></div>"),
+        
+        
         # Update Map Button -----
         actionBttn(
           ns('update_map'),
@@ -84,52 +132,54 @@ mod_map_ui <- function(id) {
           "} "
         ))),
         
-        # Gap between buttons
-        HTML("<div style='height: 10px;'></div>"),
-        
-        
-        # Fullscreen Button -----
-        actionBttn(
-          ns('full_screen'),
-          'Full Screen',
-          block = TRUE,
-          style = 'jelly',
-          color = 'primary',
-          icon = icon('expand'),
-          onclick = "openFullscreen(document.getElementById('map_container'))"
-        ),
-        
-        tags$style(HTML(paste0(
-          "#", ns("full_screen"), " { ",
-          "background-color: #154734 !important; ",
-          "color: white !important; ",
-          "} "
-        ))),
-        
-        # Gap between buttons
-        HTML("<div style='height: 10px;'></div>"),
-        
         
         # Metric Info Button -----
-        actionBttn(
-          ns('show_metric_info'),
-          'Metric Info',
-          block = TRUE,
-          style = 'jelly',
-          color = 'primary',
-          icon = icon('info')
-        ),
+        # actionBttn(
+        #   ns('show_metric_info'),
+        #   'Metric Info',
+        #   block = TRUE,
+        #   style = 'jelly',
+        #   color = 'primary',
+        #   icon = icon('info')
+        # ),
+        # 
+        # tags$style(HTML(paste0(
+        #   "#", ns("show_metric_info"), " { ",
+        #   "background-color: #154734 !important; ",
+        #   "color: white !important; ",
+        #   "} "
+        # ))),
+        # 
+        # 
+        # # Gap between buttons
+        # # HTML("<div style='height: 10px;'></div>"),
+        # 
+        # 
+        # # Fullscreen Button -----
+        # actionBttn(
+        #   ns('full_screen'),
+        #   'Full Screen',
+        #   block = TRUE,
+        #   style = 'jelly',
+        #   color = 'primary',
+        #   icon = icon('expand'),
+        #   onclick = "openFullscreen(document.getElementById('map_container'))"
+        # ),
+        # 
+        # tags$style(HTML(paste0(
+        #   "#", ns("full_screen"), " { ",
+        #   "background-color: #154734 !important; ",
+        #   "color: white !important; ",
+        #   "} "
+        # ))),
+        # 
+        # # Gap between buttons
+        # HTML("<div style='height: 10px;'></div>"),
         
-        tags$style(HTML(paste0(
-          "#", ns("show_metric_info"), " { ",
-          "background-color: #154734 !important; ",
-          "color: white !important; ",
-          "} "
-        ))),
-
+        
         # Metric Info 
         uiOutput(ns('metric_info'))
-      
+        
     ), # end div
     
     # JS function for full screen button
@@ -158,6 +208,8 @@ mod_map_server <- function(id){
       # Metric options -----
       metric_options <- sm_data$metrics %>%
           inner_join(sm_data$metadata, by = 'variable_name') %>% 
+          # Pulling out some problematic layers for now, revisit this []
+          filter(str_detect(metric, '^Acid|^Acre', negate = TRUE)) %>% 
           pull(metric) %>% 
           unique()
       
@@ -294,7 +346,11 @@ mod_map_server <- function(id){
           req(input$metric, input$year)
           
           meta <- sm_data$metadata %>% 
-            filter(metric == input$metric)
+            filter(metric == input$metric) %>% 
+            mutate(across(
+              c(metric, dimension, index, indicator, resolution), 
+              ~ str_to_sentence(.x)
+            ))
           
           HTML(
             '<h4><b>Metric: </b>', input$metric, '</h4>',
@@ -312,7 +368,7 @@ mod_map_server <- function(id){
       } else {
         # If show_metric_info is FALSE, clear the output or do nothing
         output$metric_info <- renderUI({
-          NULL  # This ensures nothing is shown when FALSE
+          NULL
         })
       }
       
@@ -322,7 +378,7 @@ mod_map_server <- function(id){
     # Update Map (Prep) -----
     observeEvent(input$update_map, {
       req(input$metric, input$year)
-      
+
       # Get corresponding variable_name
       chosen_variable <- sm_data$metadata %>% 
         filter(metric == input$metric) %>% 
@@ -336,7 +392,7 @@ mod_map_server <- function(id){
           year == input$year
         ) %>% 
         mutate(value = as.numeric(value)) %>% 
-        left_join(sm_data$metadata, by = 'variable_name')
+        left_join(select(sm_data$metadata, -year), by = 'variable_name')
       
       # Get resolution of metric
       res <- sm_data$metadata %>% 
@@ -363,12 +419,16 @@ mod_map_server <- function(id){
         left_join(sm_data$fips_key, by = 'fips')
       
       # Popups and palette
-      custom_popup <- function(county_name, 
+      custom_popup <- function(county_name,
+                               state_name,
                                variable_name,
                                value) {
+        # If the metric is at state level, county_name will be NA
+        # In this case, use state name instead
+        area_name <- ifelse(is.na(county_name), state_name, county_name)
         paste0(
           "<div style='text-align: center;'>",
-          "<b>", county_name, "</b><br>",
+          "<b>", area_name, "</b><br>",
           "<strong>", variable_name, ":</strong> ", round(value, 2)
         )
       }
@@ -400,7 +460,7 @@ mod_map_server <- function(id){
             weight = 2,
             bringToFront = TRUE
           ),
-          popup = ~custom_popup(county_name, variable_name, value),
+          popup = ~custom_popup(county_name, state_name, variable_name, value),
           popupOptions = popupOptions(closeButton = FALSE),
           label = ~county_name,
           group = 'Counties'
@@ -415,7 +475,6 @@ mod_map_server <- function(id){
           # labFormat = labelFormat(prefix = "$"),
           opacity = 1
         )
-        # addFullscreenControl()
     })
     
   })

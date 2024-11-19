@@ -50,6 +50,16 @@ mod_graph_ui <- function(id) {
           solidHeader = TRUE,
           collapsible = TRUE,
           
+          ### Choose Scale -----
+          selectInput(
+            inputId = ns('choose_scale'),
+            label = 'Choose a Scale:',
+            choices = c('County', 'State'),
+            selected = 'County',
+            width = '100%',
+            multiple = FALSE
+          ),
+          
           ### Search X -----
           selectizeInput(
             inputId = ns('search_x'),
@@ -190,37 +200,44 @@ mod_graph_server <- function(id){
     ns <- session$ns
     
      # Load data -----
-    load('data/dat.rda')
-    load('data/aggregated_meta.rda')
+    # load('data/dat.rda')
+    # load('data/aggregated_meta.rda')
     load('data/sm_data.rda')
     
     
     # Metric options -----
-    metric_options <- sm_data$metrics %>%
-      inner_join(sm_data$metadata, by = 'variable_name') %>% 
-      pull(metric) %>% 
-      unique() %>% 
-      sort()
-    
-    # Reorder metrics, put NAICS last
-    metric_options <- c(
-      sort(metric_options[!grepl("NAICS", metric_options)]),
-      sort(metric_options[grepl("NAICS", metric_options)])
-    )
+    observe({
+      chosen_scale <- tolower(input$choose_scale)
       
-    # Update search fields
-    updateSelectInput(
-      session, 
-      'search_x', 
-      choices = metric_options,
-      selected = character(0)
-    )
-    updateSelectInput(
-      session, 
-      'search_y', 
-      choices = metric_options,
-      selected = character(0)
-    )
+      metric_options <- sm_data$metrics %>%
+        inner_join(sm_data$metadata, by = 'variable_name') %>%
+        filter(resolution == chosen_scale) %>%
+        pull(metric) %>%
+        unique() %>%
+        sort()
+      
+      # Reorder metrics, put NAICS last
+      metric_options <- c(
+        sort(metric_options[!grepl("NAICS", metric_options)]),
+        sort(metric_options[!grepl("NAICS", metric_options)]),
+        sort(metric_options[grepl("NAICS", metric_options)])
+      )
+        
+      # Update search fields
+      updateSelectInput(
+        session, 
+        'search_x', 
+        choices = metric_options,
+        selected = character(0)
+      )
+      updateSelectInput(
+        session, 
+        'search_y', 
+        choices = metric_options,
+        selected = character(0)
+      )
+    })
+    
     
     # Filter Data -----
     rval_data <- reactive({
@@ -237,10 +254,11 @@ mod_graph_server <- function(id){
       # If they are not the same, throw an error
       # Otherwise, filter fips by scope/resolution (inconsistent)
       if (res_x != res_y) {
-        stop(
+        stop(paste(
           'The metrics you have selected are at different spatial scales.',
+          'It is probably the case that one variable is at the county level while the other is at the state level.',
           'Check the resolution field in the Metric Details box.'
-        )
+        ))
       } else if (res_x == 'county' & res_y == 'county') {
         dat <- filter_fips(sm_data$metrics, scope = 'counties')
       } else if (res_x == 'state' & res_y == 'state') {
@@ -401,8 +419,6 @@ mod_graph_server <- function(id){
     })
     
     
-    
-    
     # Output click_box -----
     output$click_box <- renderUI({
       req(input$search_x, input$search_y)
@@ -503,14 +519,14 @@ mod_graph_server <- function(id){
           html_output <- paste0(
             html_output, 
             '<h4>X-Axis: ', input$search_x, '</h4>',
-            '<p><b>Definition:</b> ', meta_x$definition, '</p>',
-            '<p><b>Dimension:</b> ', meta_x$dimension, '</p>',
-            '<p><b>Index:</b> ', meta_x$index, '</p>',
-            '<p><b>Indicator:</b> ', meta_x$indicator, '</p>',
-            '<p><b>Resolution:</b> ', meta_x$resolution, '</p>',
-            '<p><b>Updates:</b> ', meta_x$updates, '</p>',
-            '<p><b>Source: </b><a href="', meta_x$url, '">', meta_x$source, '</a></p>',
-            '<p><b>Citation:</b> ', meta_x$citation, '</p>'
+            '<p><b>Definition:</b> ', meta_x$definition, '<br>',
+            '<b>Dimension:</b> ', meta_x$dimension, '<br>',
+            '<b>Index:</b> ', meta_x$index, '<br>',
+            '<b>Indicator:</b> ', meta_x$indicator, '<br>',
+            '<b>Resolution:</b> ', meta_x$resolution, '<br>',
+            '<b>Updates:</b> ', meta_x$updates, '<br>',
+            '<b>Source: </b><a href="', meta_x$url, '">', meta_x$source, '</a><br>',
+            '<b>Citation:</b> ', meta_x$citation, '</p>'
           )
         }
         
@@ -521,15 +537,15 @@ mod_graph_server <- function(id){
           html_output <- paste0(
             html_output,
             '<br>',
-            '<h4>Y-Axis: ', input$search_y, '</h4>',
-            '<p><b>Definition:</b> ', meta_y$definition, '</p>',
-            '<p><b>Dimension:</b> ', meta_y$dimension, '</p>',
-            '<p><b>Index:</b> ', meta_y$index, '</p>',
-            '<p><b>Indicator:</b> ', meta_y$indicator, '</p>',
-            '<p><b>Resolution:</b> ', meta_y$resolution, '</p>',
-            '<p><b>Updates:</b> ', meta_y$updates, '</p>',
-            '<p><b>Source: </b><a href="', meta_y$url, '">', meta_y$source, '</a></p>',
-            '<p><b>Citation:</b> ', meta_y$citation, '</p>'
+            '<h4>X-Axis: ', input$search_y, '</h4>',
+            '<p><b>Definition:</b> ', meta_y$definition, '<br>',
+            '<b>Dimension:</b> ', meta_y$dimension, '<br>',
+            '<b>Index:</b> ', meta_y$index, '<br>',
+            '<b>Indicator:</b> ', meta_y$indicator, '<br>',
+            '<b>Resolution:</b> ', meta_y$resolution, '<br>',
+            '<b>Updates:</b> ', meta_y$updates, '<br>',
+            '<b>Source: </b><a href="', meta_y$url, '">', meta_y$source, '</a><br>',
+            '<b>Citation:</b> ', meta_y$citation, '</p>'
           )
         }
         
